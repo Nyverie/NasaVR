@@ -24,6 +24,7 @@ namespace NasaVR.RCP
 
         private bool? _lastXrState;
         private bool _pendingInitialPlacement = true;
+        private bool _initialPlacementCompleted;
         private int _xrFramesAfterActivation;
         private bool? _forcedXrForTests;
 
@@ -50,12 +51,13 @@ namespace NasaVR.RCP
                 ApplyRigState(xrActive, forcePlacement: true);
             }
 
-            if (_pendingInitialPlacement)
+            if (_pendingInitialPlacement && !_initialPlacementCompleted)
             {
                 if (!xrActive)
                 {
                     PlaceExperienceInFrontOfUser();
                     _pendingInitialPlacement = false;
+                    _initialPlacementCompleted = true;
                 }
                 else
                 {
@@ -66,6 +68,7 @@ namespace NasaVR.RCP
                     {
                         PlaceExperienceInFrontOfUser();
                         _pendingInitialPlacement = false;
+                        _initialPlacementCompleted = true;
                     }
                 }
             }
@@ -148,7 +151,7 @@ namespace NasaVR.RCP
 
             passthroughSetup?.RefreshCameras(xrActive);
 
-            if (forcePlacement)
+            if (forcePlacement && !_initialPlacementCompleted)
             {
                 _pendingInitialPlacement = true;
                 _xrFramesAfterActivation = 0;

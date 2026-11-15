@@ -19,6 +19,7 @@ MonoBehaviour:
     ni a un curso de RCP."
   mode: 0
   steps:
+  - {fileID: 11400000, guid: 7694e336a99a84bc8a15089183f9a5d6, type: 2}
   - {fileID: 11400000, guid: 85984008972f05b49836472b2b055308, type: 2}
   - {fileID: 11400000, guid: b7c37fe1de48f474fb12a3683a996900, type: 2}
   - {fileID: 11400000, guid: 67802b43a9371e14cbd93ec5e8746146, type: 2}
@@ -32,9 +33,9 @@ MonoBehaviour:
   - sectionName: Comprobar y llamar
     startStepIndex: 0
   - sectionName: Compresiones
-    startStepIndex: 4
+    startStepIndex: 5
   - sectionName: Desfibrilador y continuidad
-    startStepIndex: 6
+    startStepIndex: 7
   initialState: []
   stepStateEffects: []
   locks: []

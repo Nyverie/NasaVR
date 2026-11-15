@@ -6,8 +6,8 @@ using XRLabs.Core;
 namespace NasaVR.RCP
 {
     /// <summary>
-    /// Paso 0 (Passthrough AR): permite ubicar al paciente / maniquí sobre el piso real
-    /// apuntando con la mirada o controlador antes de fijar todo el kit de RCP ([Colocacion], HUD y Coach).
+    /// Paso 0 (Passthrough AR): mantiene [Colocacion] y el HUD quietos en el piso sin seguir la cámara.
+    /// Solo proyecta el reticle del piso adonde apunta el usuario y fija el kit al confirmar.
     /// </summary>
     public class RcpPatientLocator : MonoBehaviour
     {
@@ -29,12 +29,17 @@ namespace NasaVR.RCP
         public bool HasConfirmedPlacement { get; private set; }
 
         private float _enteredPlacementAt;
+        private Vector3 _pendingTargetPosition;
+        private Quaternion _pendingTargetRotation;
+        private bool _hasPendingTarget;
+        private Vector3 _reticleDefaultLocalPos;
 
         private void Awake()
         {
             if (placementController == null) placementController = GetComponent<RcpPlacementController>();
             if (experienceHud == null) experienceHud = FindFirstObjectByType<RcpExperienceHUD>();
             if (stepSystem == null) stepSystem = FindFirstObjectByType<StepSystem>();
+            if (floorReticle != null) _reticleDefaultLocalPos = floorReticle.localPosition;
         }
 
         private void Start()
@@ -53,9 +58,8 @@ namespace NasaVR.RCP
         {
             if (!IsPlacingPatient) return;
 
-            UpdateFloorTargetPose();
+            UpdateFloorReticlePose();
 
-            // En Editor/Desktop permite confirmar rápido con Espacio o Enter.
             if (!XRSettings.isDeviceActive && Keyboard.current != null &&
                 (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.enterKey.wasPressedThisFrame))
             {
@@ -63,8 +67,7 @@ namespace NasaVR.RCP
                 return;
             }
 
-            // En XR permite confirmar con Gatillo del mando o Pellizco de manos tras un breve respiro de 0.35s.
-            if (XRSettings.isDeviceActive && Time.time - _enteredPlacementAt > 0.35f)
+            if (XRSettings.isDeviceActive && Time.time - _enteredPlacementAt > 0.45f)
             {
                 if (RcpHandInputHelper.WasSelectPressedThisFrame())
                 {
@@ -77,13 +80,19 @@ namespace NasaVR.RCP
         {
             IsPlacingPatient = true;
             _enteredPlacementAt = Time.time;
+            _hasPendingTarget = false;
 
-            if (floorReticle != null) floorReticle.gameObject.SetActive(true);
+            if (floorReticle != null)
+            {
+                // Desacoplamos temporalmente solo el reticle para que el cuerpo y el HUD nunca persigan la cámara.
+                floorReticle.SetParent(null, true);
+                floorReticle.gameObject.SetActive(true);
+            }
 
-            // Detiene la voz actual mientras el usuario alinea la silueta sobre el paciente en el piso.
             VOManager.Instance?.StopAll();
             experienceHud?.SetPlacementModeState(true);
-            UpdateFloorTargetPose();
+            placementController?.SetAllHotspotsInteractive(false);
+            UpdateFloorReticlePose();
         }
 
         public void ConfirmPlacement()
@@ -93,7 +102,20 @@ namespace NasaVR.RCP
             IsPlacingPatient = false;
             HasConfirmedPlacement = true;
 
-            if (floorReticle != null) floorReticle.gameObject.SetActive(false);
+            if (_hasPendingTarget)
+            {
+                transform.position = _pendingTargetPosition;
+                transform.rotation = _pendingTargetRotation;
+            }
+
+            if (floorReticle != null)
+            {
+                floorReticle.SetParent(transform, false);
+                floorReticle.localPosition = _reticleDefaultLocalPos;
+                floorReticle.localRotation = Quaternion.identity;
+                floorReticle.gameObject.SetActive(false);
+            }
+
             experienceHud?.SetPlacementModeState(false);
             placementController?.NotifyPlacementConfirmed();
 
@@ -109,11 +131,16 @@ namespace NasaVR.RCP
         {
             IsPlacingPatient = false;
             HasConfirmedPlacement = true;
-            if (floorReticle != null) floorReticle.gameObject.SetActive(false);
+            if (floorReticle != null)
+            {
+                floorReticle.SetParent(transform, false);
+                floorReticle.localPosition = _reticleDefaultLocalPos;
+                floorReticle.gameObject.SetActive(false);
+            }
             experienceHud?.SetPlacementModeState(false);
         }
 
-        private void UpdateFloorTargetPose()
+        private void UpdateFloorReticlePose()
         {
             Camera cam = Camera.main;
             if (cam == null) return;
@@ -123,18 +150,17 @@ namespace NasaVR.RCP
             if (flatForward.sqrMagnitude < 0.001f) flatForward = Vector3.forward;
             flatForward.Normalize();
 
-            // Piso real: en XR FloorLevel es y = 0; en Editor sin suelo raycast usamos cam.y - 1.15m.
             float floorY = XRSettings.isDeviceActive
                 ? defaultFloorY
                 : Mathf.Max(0f, cam.transform.position.y - 1.05f);
 
-            Vector3 targetPoint = cam.transform.position + flatForward * 1.15f;
+            Vector3 targetPoint = cam.transform.position + flatForward * 0.90f;
             targetPoint.y = floorY;
 
             Ray ray = new Ray(cam.transform.position, cam.transform.forward);
             if (Physics.Raycast(ray, out RaycastHit hit, maxRayDistance, floorRayMask, QueryTriggerInteraction.Ignore))
             {
-                if (!hit.transform.IsChildOf(transform))
+                if (!hit.transform.IsChildOf(transform) && (floorReticle == null || !hit.transform.IsChildOf(floorReticle)))
                 {
                     targetPoint = hit.point;
                 }
@@ -154,11 +180,18 @@ namespace NasaVR.RCP
             float dist = Mathf.Clamp(horiz.magnitude, minHorizontalDistance, maxHorizontalDistance);
             Vector2 dir = horiz.sqrMagnitude > 0.0001f ? horiz.normalized : new Vector2(flatForward.x, flatForward.z);
 
-            transform.position = new Vector3(
+            _pendingTargetPosition = new Vector3(
                 cam.transform.position.x + dir.x * dist,
-                targetPoint.y + 0.08f, // Pecho ligeramente elevado sobre el piso/colchoneta
+                targetPoint.y + 0.08f,
                 cam.transform.position.z + dir.y * dist);
-            transform.rotation = Quaternion.LookRotation(new Vector3(dir.x, 0f, dir.y), Vector3.up);
+            _pendingTargetRotation = Quaternion.LookRotation(new Vector3(dir.x, 0f, dir.y), Vector3.up);
+            _hasPendingTarget = true;
+
+            if (floorReticle != null)
+            {
+                floorReticle.position = new Vector3(_pendingTargetPosition.x, targetPoint.y + 0.012f, _pendingTargetPosition.z);
+                floorReticle.rotation = _pendingTargetRotation;
+            }
         }
     }
 }

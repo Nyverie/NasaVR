@@ -214,11 +214,12 @@ namespace NasaVR.RCP
         {
             if (Time.time < visual.NextInteractTime) return;
 
-            // 1. Toque físico directo a botones del HUD sin necesidad de rayo ni mando.
+            // 1. Toque físico directo a botones del HUD sin necesidad de rayo ni mando (excluye Reubicar/Reiniciar para evitar toques accidentales).
             for (int i = 0; i < _hudButtons.Count; i++)
             {
                 var btn = _hudButtons[i];
                 if (btn == null || !btn.gameObject.activeInHierarchy || !btn.interactable) continue;
+                if (btn.name == "BtnReposition" || btn.name == "BtnRestart") continue;
                 var rt = btn.GetComponent<RectTransform>();
                 if (rt == null) continue;
 
@@ -236,12 +237,14 @@ namespace NasaVR.RCP
             // Durante Paso 0 (ubicar paciente) aún no se activan hotspots clínicos.
             if (_patientLocator != null && _patientLocator.IsPlacingPatient) return;
 
-            // 2. Toque físico directo con el dedo sobre hotspots 3D (requiere contacto breve para no disparar por accidente).
+            // 2. Toque físico directo con el dedo sobre hotspots 3D habilitados para el paso actual.
             TouchableHotspot touchingHotspot = null;
             for (int i = 0; i < _hotspots.Count; i++)
             {
                 var hs = _hotspots[i];
                 if (hs == null || !hs.gameObject.activeInHierarchy) continue;
+                var hsCol = hs.GetComponent<Collider>();
+                if (hsCol == null || !hsCol.enabled) continue;
                 if (Vector3.Distance(tipWorld, hs.transform.position) <= PhysicalPokeHotspotRadius)
                 {
                     touchingHotspot = hs;

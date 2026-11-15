@@ -68,14 +68,8 @@ namespace NasaVR.RCP.Editor
             {
                 var settings = VoiceBakeRunner.GetOrCreateSettings();
                 string libPath = $"Assets/Experiencias/{ExperienceId}/Frases/{ExperienceId}.asset";
+                ReimportGuionIfPresent();
                 var library = AssetDatabase.LoadAssetAtPath<LineLibrary>(libPath);
-                if (library == null && File.Exists(GuionJsonPath))
-                {
-                    var doc = GuionDocument.Parse(File.ReadAllText(GuionJsonPath));
-                    GuionImporter.Import(doc);
-                    AssetDatabase.Refresh();
-                    library = AssetDatabase.LoadAssetAtPath<LineLibrary>(libPath);
-                }
                 if (library == null)
                     throw new InvalidOperationException("No se encontró LineLibrary en " + libPath);
 
@@ -316,23 +310,27 @@ namespace NasaVR.RCP.Editor
 
         // ── 2. Guion + Horneado de voces offline con MacSayProvider ──────────
 
+        private static void ReimportGuionIfPresent()
+        {
+            if (!File.Exists(GuionJsonPath)) return;
+
+            string json = File.ReadAllText(GuionJsonPath);
+            var doc = GuionDocument.Parse(json);
+            var report = GuionImporter.Import(doc);
+            if (report.HasErrors)
+                throw new InvalidOperationException("GuionImporter reportó errores al importar " + GuionJsonPath + ": " + report);
+            AssetDatabase.Refresh();
+        }
+
         private static void EnsureExperienceImportedAndVoicesBaked()
         {
             string seqPath = $"Assets/Experiencias/{ExperienceId}/Secuencias/{ExperienceId}.asset";
             string libPath = $"Assets/Experiencias/{ExperienceId}/Frases/{ExperienceId}.asset";
 
+            ReimportGuionIfPresent();
+
             var sequence = AssetDatabase.LoadAssetAtPath<SimulationSequence>(seqPath);
             var library = AssetDatabase.LoadAssetAtPath<LineLibrary>(libPath);
-
-            if ((sequence == null || library == null) && File.Exists(GuionJsonPath))
-            {
-                string json = File.ReadAllText(GuionJsonPath);
-                var doc = GuionDocument.Parse(json);
-                GuionImporter.Import(doc);
-                AssetDatabase.Refresh();
-                sequence = AssetDatabase.LoadAssetAtPath<SimulationSequence>(seqPath);
-                library = AssetDatabase.LoadAssetAtPath<LineLibrary>(libPath);
-            }
 
             if (sequence == null || library == null)
             {
@@ -913,38 +911,38 @@ namespace NasaVR.RCP.Editor
             var canvas = root.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             var rt = root.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(1150f, 700f);
-            rt.localScale = Vector3.one * 0.00040f;
-            rt.localPosition = new Vector3(0f, 0.42f, 0.36f);
-            rt.localRotation = Quaternion.Euler(22f, 0f, 0f);
+            rt.sizeDelta = new Vector2(1080f, 660f);
+            rt.localScale = Vector3.one * 0.00062f;
+            rt.localPosition = new Vector3(0f, 0.44f, 0.14f);
+            rt.localRotation = Quaternion.Euler(20f, 0f, 0f);
 
             root.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 10f;
             root.AddComponent<GraphicRaycaster>();
             root.AddComponent<TrackedDeviceGraphicRaycaster>();
 
             // Fondo principal
-            var bg = CreateUiBox("Background", root.transform, Vector2.zero, Vector2.one, new Color(0.05f, 0.09f, 0.14f, 0.90f));
+            var bg = CreateUiBox("Background", root.transform, Vector2.zero, Vector2.one, new Color(0.05f, 0.09f, 0.14f, 0.92f));
             bg.GetComponent<Image>().raycastTarget = false;
 
             var accent = CreateUiBox("AccentBar", root.transform, new Vector2(0f, 0f), new Vector2(0.014f, 1f), new Color(0.14f, 0.78f, 0.82f, 1f)).GetComponent<Image>();
             accent.raycastTarget = false;
 
-            var headerText = CreateUiText("Header", root.transform, new Vector2(0.04f, 0.88f), new Vector2(0.64f, 0.97f), 17f, FontStyles.Bold, new Color(0.55f, 0.90f, 0.96f, 1f), TextAlignmentOptions.Left);
-            var badgeText = CreateUiText("StatusBadge", root.transform, new Vector2(0.64f, 0.88f), new Vector2(0.96f, 0.97f), 16f, FontStyles.Bold, new Color(0.95f, 0.88f, 0.45f, 1f), TextAlignmentOptions.Right);
+            var headerText = CreateUiText("Header", root.transform, new Vector2(0.04f, 0.88f), new Vector2(0.62f, 0.97f), 20f, FontStyles.Bold, new Color(0.55f, 0.90f, 0.96f, 1f), TextAlignmentOptions.Left);
+            var badgeText = CreateUiText("StatusBadge", root.transform, new Vector2(0.62f, 0.88f), new Vector2(0.96f, 0.97f), 19f, FontStyles.Bold, new Color(0.95f, 0.88f, 0.45f, 1f), TextAlignmentOptions.Right);
 
             // Franja de Monitor Cardíaco ECG en vivo (paro cardíaco -> compresiones -> pulso recuperado)
-            var ecgBox = CreateUiBox("EcgMonitorPanel", root.transform, new Vector2(0.04f, 0.71f), new Vector2(0.96f, 0.86f), new Color(0.18f, 0.06f, 0.08f, 0.90f));
+            var ecgBox = CreateUiBox("EcgMonitorPanel", root.transform, new Vector2(0.04f, 0.72f), new Vector2(0.96f, 0.86f), new Color(0.18f, 0.06f, 0.08f, 0.90f));
             var ecgBgImg = ecgBox.GetComponent<Image>();
             ecgBgImg.raycastTarget = false;
 
             var ecgRawGo = new GameObject("EcgWaveform", typeof(RectTransform), typeof(RawImage));
             ecgRawGo.transform.SetParent(ecgBox.transform, false);
-            SetAnchors(ecgRawGo.GetComponent<RectTransform>(), new Vector2(0.015f, 0.10f), new Vector2(0.52f, 0.90f));
+            SetAnchors(ecgRawGo.GetComponent<RectTransform>(), new Vector2(0.015f, 0.10f), new Vector2(0.50f, 0.90f));
             var ecgRaw = ecgRawGo.GetComponent<RawImage>();
             ecgRaw.raycastTarget = false;
 
-            var ecgStatusLbl = CreateUiText("EcgStatusLabel", ecgBox.transform, new Vector2(0.54f, 0.46f), new Vector2(0.98f, 0.92f), 17f, FontStyles.Bold, new Color(1f, 0.36f, 0.38f, 1f), TextAlignmentOptions.Left);
-            var ecgBpmLbl = CreateUiText("EcgBpmLabel", ecgBox.transform, new Vector2(0.54f, 0.08f), new Vector2(0.98f, 0.48f), 22f, FontStyles.Bold, new Color(1f, 0.38f, 0.38f, 1f), TextAlignmentOptions.Left);
+            var ecgStatusLbl = CreateUiText("EcgStatusLabel", ecgBox.transform, new Vector2(0.52f, 0.46f), new Vector2(0.98f, 0.92f), 20f, FontStyles.Bold, new Color(1f, 0.36f, 0.38f, 1f), TextAlignmentOptions.Left);
+            var ecgBpmLbl = CreateUiText("EcgBpmLabel", ecgBox.transform, new Vector2(0.52f, 0.08f), new Vector2(0.98f, 0.48f), 25f, FontStyles.Bold, new Color(1f, 0.38f, 0.38f, 1f), TextAlignmentOptions.Left);
 
             var ecgMonitor = root.AddComponent<RcpCardiacMonitorUI>();
             var ecgSo = new SerializedObject(ecgMonitor);
@@ -956,33 +954,33 @@ namespace NasaVR.RCP.Editor
             ecgSo.FindProperty("compressionMonitor").objectReferenceValue = compressionMonitor;
             ecgSo.ApplyModifiedPropertiesWithoutUndo();
 
-            var titleText = CreateUiText("StepTitle", root.transform, new Vector2(0.04f, 0.59f), new Vector2(0.96f, 0.69f), 24f, FontStyles.Bold, Color.white, TextAlignmentOptions.Left);
-            var subtitleText = CreateUiText("Subtitle", root.transform, new Vector2(0.04f, 0.32f), new Vector2(0.96f, 0.58f), 19f, FontStyles.Normal, new Color(0.92f, 0.96f, 1f, 1f), TextAlignmentOptions.TopLeft);
+            var titleText = CreateUiText("StepTitle", root.transform, new Vector2(0.04f, 0.60f), new Vector2(0.96f, 0.70f), 29f, FontStyles.Bold, Color.white, TextAlignmentOptions.Left);
+            var subtitleText = CreateUiText("Subtitle", root.transform, new Vector2(0.04f, 0.34f), new Vector2(0.96f, 0.59f), 24f, FontStyles.Normal, new Color(0.92f, 0.96f, 1f, 1f), TextAlignmentOptions.TopLeft);
 
             // Grupo de elección para paso p3 (sin teclado)
             var choiceGroup = new GameObject("ChoiceGroup", typeof(RectTransform));
             choiceGroup.transform.SetParent(root.transform, false);
-            SetAnchors(choiceGroup.GetComponent<RectTransform>(), new Vector2(0.04f, 0.16f), new Vector2(0.96f, 0.30f));
-            var (btnNormal, lblNormal) = CreateUiButton("BtnRespiraNormal", choiceGroup.transform, new Vector2(0f, 0f), new Vector2(0.485f, 1f), new Color(0.80f, 0.44f, 0.14f, 1f), "1. Respira con normalidad", 18f);
-            var (btnNoRespira, lblNoRespira) = CreateUiButton("BtnNoRespira", choiceGroup.transform, new Vector2(0.515f, 0f), new Vector2(1f, 1f), new Color(0.10f, 0.62f, 0.56f, 1f), "2. No respira / solo jadea", 18f);
+            SetAnchors(choiceGroup.GetComponent<RectTransform>(), new Vector2(0.04f, 0.16f), new Vector2(0.96f, 0.32f));
+            var (btnNormal, lblNormal) = CreateUiButton("BtnRespiraNormal", choiceGroup.transform, new Vector2(0f, 0f), new Vector2(0.485f, 1f), new Color(0.80f, 0.44f, 0.14f, 1f), "1. Respira con normalidad", 22f);
+            var (btnNoRespira, lblNoRespira) = CreateUiButton("BtnNoRespira", choiceGroup.transform, new Vector2(0.515f, 0f), new Vector2(1f, 1f), new Color(0.10f, 0.62f, 0.56f, 1f), "2. No respira / solo jadea", 22f);
             choiceGroup.SetActive(false);
 
             // Grupo de compresiones (p6 - p8)
             var compGroup = new GameObject("CompressionGroup", typeof(RectTransform));
             compGroup.transform.SetParent(root.transform, false);
-            SetAnchors(compGroup.GetComponent<RectTransform>(), new Vector2(0.04f, 0.16f), new Vector2(0.96f, 0.30f));
+            SetAnchors(compGroup.GetComponent<RectTransform>(), new Vector2(0.04f, 0.16f), new Vector2(0.96f, 0.32f));
             var beatRing = CreateUiBox("BeatIndicator", compGroup.transform, new Vector2(0.02f, 0.15f), new Vector2(0.10f, 0.85f), new Color(0.14f, 0.78f, 0.82f, 0.5f)).GetComponent<Image>();
             beatRing.raycastTarget = false;
-            var metronomeLabel = CreateUiText("MetronomeLabel", compGroup.transform, new Vector2(0.13f, 0.10f), new Vector2(0.74f, 0.90f), 20f, FontStyles.Bold, new Color(0.55f, 0.98f, 0.82f, 1f), TextAlignmentOptions.Left);
+            var metronomeLabel = CreateUiText("MetronomeLabel", compGroup.transform, new Vector2(0.13f, 0.10f), new Vector2(0.74f, 0.90f), 24f, FontStyles.Bold, new Color(0.55f, 0.98f, 0.82f, 1f), TextAlignmentOptions.Left);
             metronomeLabel.text = "Ritmo: 110 LPM";
-            var timerText = CreateUiText("TimerText", compGroup.transform, new Vector2(0.75f, 0.10f), new Vector2(0.98f, 0.90f), 25f, FontStyles.Bold, Color.white, TextAlignmentOptions.Right);
+            var timerText = CreateUiText("TimerText", compGroup.transform, new Vector2(0.75f, 0.10f), new Vector2(0.98f, 0.90f), 29f, FontStyles.Bold, Color.white, TextAlignmentOptions.Right);
             compGroup.SetActive(false);
 
             // Barra inferior de controles
-            var (btnLang, lblLang) = CreateUiButton("BtnLang", root.transform, new Vector2(0.04f, 0.03f), new Vector2(0.25f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Idioma: ES", 16f);
-            var (btnRepo, lblRepo) = CreateUiButton("BtnReposition", root.transform, new Vector2(0.27f, 0.03f), new Vector2(0.50f, 0.13f), new Color(0.12f, 0.48f, 0.52f, 1f), "Confirmar aquí", 16f);
-            var (btnSkip, lblSkip) = CreateUiButton("BtnSkip", root.transform, new Vector2(0.52f, 0.03f), new Vector2(0.74f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Saltar voz", 16f);
-            var (btnRestart, lblRestart) = CreateUiButton("BtnRestart", root.transform, new Vector2(0.76f, 0.03f), new Vector2(0.96f, 0.13f), new Color(0.22f, 0.32f, 0.44f, 1f), "Reiniciar", 16f);
+            var (btnLang, lblLang) = CreateUiButton("BtnLang", root.transform, new Vector2(0.04f, 0.03f), new Vector2(0.25f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Idioma: ES", 18f);
+            var (btnRepo, lblRepo) = CreateUiButton("BtnReposition", root.transform, new Vector2(0.27f, 0.03f), new Vector2(0.50f, 0.13f), new Color(0.12f, 0.48f, 0.52f, 1f), "Confirmar aquí", 18f);
+            var (btnSkip, lblSkip) = CreateUiButton("BtnSkip", root.transform, new Vector2(0.52f, 0.03f), new Vector2(0.74f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Saltar voz", 18f);
+            var (btnRestart, lblRestart) = CreateUiButton("BtnRestart", root.transform, new Vector2(0.76f, 0.03f), new Vector2(0.96f, 0.13f), new Color(0.22f, 0.32f, 0.44f, 1f), "Reiniciar", 18f);
 
             var hud = root.AddComponent<RcpExperienceHUD>();
             var so = new SerializedObject(hud);

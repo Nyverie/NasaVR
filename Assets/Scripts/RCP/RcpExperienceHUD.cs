@@ -207,6 +207,7 @@ namespace NasaVR.RCP
 
             bool isTimed = step != null && TimedStepSeconds.ContainsKey(step.stepId);
             if (compressionGroup != null) compressionGroup.SetActive(isTimed);
+            if (repositionButton != null) repositionButton.interactable = !isTimed;
 
             if (statusBadgeText != null)
             {
@@ -238,6 +239,7 @@ namespace NasaVR.RCP
         {
             if (choiceGroup != null) choiceGroup.SetActive(false);
             if (compressionGroup != null) compressionGroup.SetActive(false);
+            if (repositionButton != null) repositionButton.interactable = true;
 
             bool es = LanguageService.Current == CoachLanguage.Spanish;
             if (statusBadgeText != null)
@@ -474,8 +476,8 @@ namespace NasaVR.RCP
             // Si el HUD está anclado directamente sobre [Colocacion], se mantiene pegado al paciente.
             if (transform.parent != null && placementController != null && transform.parent == placementController.transform)
             {
-                transform.localPosition = new Vector3(0f, 0.44f, 0.34f);
-                transform.localRotation = Quaternion.Euler(22f, 0f, 0f);
+                transform.localPosition = new Vector3(0f, 0.44f, 0.14f);
+                transform.localRotation = Quaternion.Euler(20f, 0f, 0f);
                 return;
             }
 

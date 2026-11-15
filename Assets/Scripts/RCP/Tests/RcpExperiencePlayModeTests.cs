@@ -89,13 +89,13 @@ namespace NasaVR.RCP.Tests
             Assert.IsNotNull(sim);
             var steps = sim.Steps;
             Assert.IsNotNull(steps);
-            Assert.AreEqual(9, steps.TotalSteps, "El guion debe tener 9 pasos (p1..p9).");
+            Assert.AreEqual(10, steps.TotalSteps, "El guion debe tener 10 pasos (p0..p9).");
 
             var locator = Object.FindFirstObjectByType<RcpPatientLocator>();
             Assert.IsNotNull(locator);
             locator.SkipPlacementForTests();
 
-            // Verifica que VOManager tenga cargada la librería con los 38 clips horneados.
+            // Verifica que VOManager tenga cargada la librería con los 40 clips horneados (incluyendo p0.amarre ES/EN).
             var vo = VOManager.Instance;
             Assert.IsNotNull(vo);
             var libs = Resources.FindObjectsOfTypeAll<LineLibrary>();
@@ -111,19 +111,26 @@ namespace NasaVR.RCP.Tests
                     }
                 }
             }
-            Assert.AreEqual(38, clipsAssigned, "Deben existir los 38 AudioClips ES/EN horneados con ElevenLabs.");
+            Assert.AreEqual(40, clipsAssigned, "Deben existir los 40 AudioClips ES/EN horneados con ElevenLabs.");
 
             var guideVisual = Object.FindFirstObjectByType<RcpCompressionGuideVisual>();
             var ecgMonitor = Object.FindFirstObjectByType<RcpCardiacMonitorUI>();
             Assert.IsNotNull(guideVisual, "Debe existir RcpCompressionGuideVisual.");
             Assert.IsNotNull(ecgMonitor, "Debe existir RcpCardiacMonitorUI en el HUD.");
 
-            // Inicia secuencia (p1 -> p2 tras saltar voz).
+            // Inicia secuencia en p0 (sujeción al piso en microgravedad) -> p1 -> p2 tras saltar voz.
             steps.StartSteps(XRLabs.Core.SimulationMode.Guided);
             yield return null;
-            Assert.AreEqual("p1", steps.CurrentStep?.stepId);
+            Assert.AreEqual("p0", steps.CurrentStep?.stepId);
             Assert.IsFalse(guideVisual.IsShowing, "Las manos guía 3D no deben mostrarse antes de compresiones.");
             Assert.AreEqual(CardiacMonitorMode.CardiacArrest, ecgMonitor.CurrentMode);
+
+            var chestCol = GameObject.Find("Objeto_pecho")?.GetComponent<Collider>();
+            Assert.IsNotNull(chestCol);
+            Assert.IsFalse(chestCol.enabled, "Objeto_pecho no debe capturar el láser ni parpadear al inicio.");
+
+            yield return WaitForStep(steps, "p1", 2f);
+            Assert.AreEqual("p1", steps.CurrentStep?.stepId);
 
             vo.Skip();
             yield return WaitForStep(steps, "p2", 2f);
@@ -138,6 +145,7 @@ namespace NasaVR.RCP.Tests
             InvokeHotspotTouch("Objeto_hombros", fromHover: false);
             yield return WaitForStep(steps, "p3", 2f);
             Assert.AreEqual("p3", steps.CurrentStep?.stepId);
+            Assert.IsFalse(chestCol.enabled, "Objeto_pecho debe permanecer desactivado en p3 para priorizar botones UI.");
 
             // Opción errónea en p3 mantiene el paso en p3; espera fin de corrección antes del reintento válido.
             yield return WaitForActivePhase(steps, 2f);
@@ -172,6 +180,9 @@ namespace NasaVR.RCP.Tests
             Assert.IsTrue(metronome.IsActive, "El metrónomo de 110 LPM debe activarse al llegar a p6.");
             Assert.IsTrue(guideVisual.IsShowing, "Las manos guía 3D (CPR-Guide.fbx) deben aparecer al iniciar compresiones.");
             Assert.AreEqual(CardiacMonitorMode.Compressions, ecgMonitor.CurrentMode);
+            var repoBtn = GameObject.Find("BtnReposition")?.GetComponent<UnityEngine.UI.Button>();
+            Assert.IsNotNull(repoBtn);
+            Assert.IsFalse(repoBtn.interactable, "BtnReposition debe bloquearse durante compresiones para no mover el cuerpo.");
 
             // Sin manos cerca debe alertar HandsAwayFromChest; con compresiones a ~110 LPM debe validar InPositionGoodRate.
             monitor.ForceDistanceForTests(0.85f);

@@ -17,6 +17,11 @@
     "nombre": "Coach"
   },
   "lineas": {
+    "p0.amarre": {
+      "es": "Antes de empezar, recuerda amarrar y sujetar firmemente al paciente y a ti mismo al piso o a las sujeciones del módulo espacial para que no floten durante las compresiones.",
+      "en": "Before you begin, remember to strap and anchor both the patient and yourself firmly to the floor or spacecraft restraints so neither of you floats away during compressions.",
+      "nota": "claro, firme y pausado"
+    },
     "p1.bienvenida": {
       "es": "Mantén la calma. Te voy a guiar paso a paso.",
       "en": "Stay calm. I will guide you step by step.",
@@ -142,7 +147,7 @@
     {
       "id": "evaluacion",
       "titulo": "Comprobar y llamar",
-      "desde": "p1"
+      "desde": "p0"
     },
     {
       "id": "compresiones",
@@ -156,6 +161,15 @@
     }
   ],
   "pasos": [
+    {
+      "id": "p0",
+      "titulo": "Sujeta al paciente al piso",
+      "tipo": "narracion",
+      "intro": [
+        "p0.amarre"
+      ],
+      "ancla": "paciente"
+    },
     {
       "id": "p1",
       "titulo": "Mantén la calma",
@@ -206,11 +220,7 @@
       "retrasoPista": 12,
       "tarea": true,
       "etiquetaTarea": "ui.tarea.respiracion",
-      "ancla": "paciente",
-      "senalar": "pecho",
-      "activos": [
-        "pecho"
-      ]
+      "ancla": "paciente"
     },
     {
       "id": "p4",

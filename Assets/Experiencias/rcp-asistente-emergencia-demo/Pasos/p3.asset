@@ -49,9 +49,8 @@ MonoBehaviour:
   countsAsTask: 1
   taskLabel: ui.tarea.respiracion
   coachAnchorId: paciente
-  pointAtTargetId: pecho
-  activeTargetIds:
-  - pecho
+  pointAtTargetId: 
+  activeTargetIds: []
   guard: []
   onStartEffects: []
   onErrorEffects: []

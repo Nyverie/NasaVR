@@ -22,16 +22,19 @@ namespace NasaVR.RCP
 
         private readonly Dictionary<string, Renderer[]> _targetRenderers = new();
         private readonly Dictionary<string, Transform> _targetTransforms = new();
+        private readonly Dictionary<string, Collider[]> _targetColliders = new();
+        private readonly Dictionary<string, XRSimpleInteractable> _targetInteractables = new();
         private readonly Dictionary<Renderer, Color> _baseColors = new();
         private readonly HashSet<string> _hoveredTargets = new();
         private StepSystem _steps;
         private RcpMetronome _metronome;
+        private RcpPatientLocator _patientLocator;
         private string _activeTargetId;
+        private bool _snapVolumesCleaned;
 
         private static readonly Color ActiveColor = new(0.12f, 0.85f, 0.90f, 1f);
         private static readonly Color PulseEmission = new(0.10f, 0.70f, 0.85f, 1f);
         private static readonly Color AlertPulseEmission = new(1.0f, 0.28f, 0.10f, 1f);
-        private static readonly Color InactiveColor = new(0.32f, 0.42f, 0.50f, 0.55f);
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
@@ -44,11 +47,16 @@ namespace NasaVR.RCP
         private void Start()
         {
             _metronome = FindFirstObjectByType<RcpMetronome>();
+            _patientLocator = GetComponent<RcpPatientLocator>();
             if (experienceHud == null) experienceHud = FindFirstObjectByType<RcpExperienceHUD>();
             if (compressionMonitor == null) compressionMonitor = FindFirstObjectByType<RcpCompressionMonitor>();
             if (SimulationManager.Instance != null && SimulationManager.Instance.Steps != null)
             {
                 Bind(SimulationManager.Instance.Steps);
+            }
+            if (_patientLocator != null && _patientLocator.IsPlacingPatient)
+            {
+                SetAllHotspotsInteractive(false);
             }
         }
 
@@ -132,6 +140,13 @@ namespace NasaVR.RCP
 
         private void Update()
         {
+            if (!_snapVolumesCleaned)
+            {
+                _snapVolumesCleaned = true;
+                DisableSnapVolumes();
+            }
+
+            if (_patientLocator != null && _patientLocator.IsPlacingPatient) return;
             if (string.IsNullOrEmpty(_activeTargetId)) return;
             if (!_targetRenderers.TryGetValue(_activeTargetId, out var renderers)) return;
 
@@ -170,6 +185,22 @@ namespace NasaVR.RCP
             }
         }
 
+        public void SetAllHotspotsInteractive(bool active)
+        {
+            foreach (var kvp in _targetColliders)
+            {
+                foreach (var c in kvp.Value)
+                {
+                    if (c != null) c.enabled = active;
+                }
+            }
+            foreach (var kvp in _targetInteractables)
+            {
+                if (kvp.Value != null) kvp.Value.enabled = active;
+            }
+            if (!active) _hoveredTargets.Clear();
+        }
+
         private void HandleStepStarted(StepDefinition step, int index, int total)
         {
             UpdateHighlight(step);
@@ -189,9 +220,26 @@ namespace NasaVR.RCP
             }
             if (!string.IsNullOrEmpty(_activeTargetId)) activeSet.Add(_activeTargetId);
 
+            bool placing = _patientLocator != null && _patientLocator.IsPlacingPatient;
+            bool stepExpectsHotspotClick = !placing && step != null && step.stepType == StepType.Interaction &&
+                                           step.completionCondition is TouchableHotspotCondition;
+
+            foreach (var kvp in _targetColliders)
+            {
+                bool enableHit = stepExpectsHotspotClick && activeSet.Contains(kvp.Key);
+                foreach (var c in kvp.Value)
+                {
+                    if (c != null) c.enabled = enableHit;
+                }
+                if (_targetInteractables.TryGetValue(kvp.Key, out var interactable) && interactable != null)
+                {
+                    interactable.enabled = enableHit;
+                }
+            }
+
             foreach (var kvp in _targetRenderers)
             {
-                bool isActive = activeSet.Contains(kvp.Key);
+                bool isActive = !placing && activeSet.Contains(kvp.Key);
                 foreach (var r in kvp.Value)
                 {
                     if (r == null) continue;
@@ -213,10 +261,23 @@ namespace NasaVR.RCP
             }
         }
 
+        private void DisableSnapVolumes()
+        {
+            foreach (var snap in GetComponentsInChildren<XRInteractableSnapVolume>(true))
+            {
+                if (snap == null) continue;
+                var col = snap.GetComponent<Collider>();
+                if (col != null) col.enabled = false;
+                snap.enabled = false;
+            }
+        }
+
         private void CacheTargets()
         {
             _targetRenderers.Clear();
             _targetTransforms.Clear();
+            _targetColliders.Clear();
+            _targetInteractables.Clear();
             _baseColors.Clear();
             _hoveredTargets.Clear();
 
@@ -225,10 +286,12 @@ namespace NasaVR.RCP
                 if (target == null || string.IsNullOrEmpty(target.TargetId)) continue;
                 string id = target.TargetId;
                 _targetTransforms[id] = target.transform;
+                _targetColliders[id] = target.GetComponentsInChildren<Collider>(true);
 
                 var interactable = target.GetComponent<XRSimpleInteractable>();
                 if (interactable != null)
                 {
+                    _targetInteractables[id] = interactable;
                     interactable.hoverEntered.AddListener(_ => _hoveredTargets.Add(id));
                     interactable.hoverExited.AddListener(_ => _hoveredTargets.Remove(id));
                 }

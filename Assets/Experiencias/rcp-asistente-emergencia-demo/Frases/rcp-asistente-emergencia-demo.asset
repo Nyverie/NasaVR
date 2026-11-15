@@ -15,6 +15,24 @@ MonoBehaviour:
   speakerName: Coach
   speakerPortrait: {fileID: 0}
   lines:
+  - id: p0.amarre
+    note: claro, firme y pausado
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Antes de empezar, recuerda amarrar y sujetar firmemente al paciente
+        y a ti mismo al piso o a las sujeciones del m\xF3dulo espacial para que no
+        floten durante las compresiones."
+      spokenText: 
+      clip: {fileID: 8300000, guid: 90d2a28a7dace49a7b70d55d87269b70, type: 3}
+      bakeHash: ed7fcaf551e8a5911c6b86b8d81ab240294665e385ff39788d663f8b45d570ac
+    - language: 1
+      text: Before you begin, remember to strap and anchor both the patient and yourself
+        firmly to the floor or spacecraft restraints so neither of you floats away
+        during compressions.
+      spokenText: 
+      clip: {fileID: 8300000, guid: 1902822ff75e44dbb8479936095c42a5, type: 3}
+      bakeHash: d83701e94792f5bfc3605f12b7daf29ba91ac600bcd74b87bc3e2d8e3e84e849
   - id: p1.bienvenida
     note: firme, calmado y directo; frases cortas
     textOnly: 0
