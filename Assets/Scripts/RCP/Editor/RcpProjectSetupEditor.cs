@@ -750,6 +750,8 @@ namespace NasaVR.RCP.Editor
                 if (AssetImporter.GetAtPath(modelPath) is ModelImporter importer)
                 {
                     importer.animationType = ModelImporterAnimationType.Generic;
+                    importer.importCameras = false;
+                    importer.importLights = false;
                     var clipAnims = importer.clipAnimations != null && importer.clipAnimations.Length > 0
                         ? importer.clipAnimations
                         : importer.defaultClipAnimations;
@@ -770,10 +772,18 @@ namespace NasaVR.RCP.Editor
                     var inst = (GameObject)PrefabUtility.InstantiatePrefab(modelAsset, holder.transform);
                     inst.name = "CPR-Guide_Model";
 
-                    // Quita cualquier collider del modelo para no interferir con raycasts de Objeto_pecho.
+                    // Quita cualquier collider, cámara o luz del modelo FBX para no interferir ni robar la vista XR.
                     foreach (var c in inst.GetComponentsInChildren<Collider>(true))
                     {
                         UnityEngine.Object.DestroyImmediate(c);
+                    }
+                    foreach (var cam in inst.GetComponentsInChildren<Camera>(true))
+                    {
+                        cam.enabled = false;
+                    }
+                    foreach (var l in inst.GetComponentsInChildren<Light>(true))
+                    {
+                        l.enabled = false;
                     }
 
                     // Normaliza escala y apoyo sobre el esternón sin importar escala original del FBX.
@@ -791,8 +801,8 @@ namespace NasaVR.RCP.Editor
                         float maxHoriz = Mathf.Max(combined.size.x, combined.size.z, 0.001f);
                         float scale = 0.24f / maxHoriz;
                         inst.transform.localScale = Vector3.one * scale;
-                        float minYOffset = -combined.min.y * scale;
-                        inst.transform.localPosition = new Vector3(0f, minYOffset, 0f);
+                        float localMinY = combined.min.y - holder.transform.position.y;
+                        inst.transform.localPosition = new Vector3(0f, -localMinY * scale, 0f);
                     }
 
                     var clips = AssetDatabase.LoadAllAssetsAtPath(modelPath).OfType<AnimationClip>()

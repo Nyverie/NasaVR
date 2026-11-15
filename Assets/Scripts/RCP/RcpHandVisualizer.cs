@@ -336,6 +336,7 @@ namespace NasaVR.RCP
         private void UpdateProximityLaserMute(bool leftHandTracked, bool rightHandTracked)
         {
             bool placing = _patientLocator != null && _patientLocator.IsPlacingPatient;
+            bool metronomeActive = _metronome != null && _metronome.IsActive;
             for (int i = 0; i < _handLasers.Count; i++)
             {
                 var state = _handLasers[i];
@@ -347,8 +348,14 @@ namespace NasaVR.RCP
                     Vector3 handPos = GetHandPositionForSide(state.IsLeft, leftHandTracked, rightHandTracked, state.Interactor.transform.position);
                     float dist = Vector3.Distance(handPos, _chestTarget.position);
                     float threshold = state.IsMuted ? ChestLaserUnmuteRadius : ChestLaserMuteRadius;
-                    if (_metronome != null && _metronome.IsActive) threshold += 0.05f;
+                    if (metronomeActive) threshold += 0.05f;
                     shouldMute = dist <= threshold;
+                }
+
+                bool muteUi = shouldMute && metronomeActive;
+                if (state.Interactor.enableUIInteraction == muteUi)
+                {
+                    state.Interactor.enableUIInteraction = !muteUi;
                 }
 
                 if (shouldMute == state.IsMuted) continue;

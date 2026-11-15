@@ -207,7 +207,8 @@ namespace NasaVR.RCP
 
             bool isTimed = step != null && TimedStepSeconds.ContainsKey(step.stepId);
             if (compressionGroup != null) compressionGroup.SetActive(isTimed);
-            if (repositionButton != null) repositionButton.interactable = !isTimed;
+            bool lockReposition = isTimed || (step != null && step.stepId == "p5");
+            if (repositionButton != null) repositionButton.interactable = !lockReposition;
 
             if (statusBadgeText != null)
             {

@@ -89,6 +89,16 @@ namespace NasaVR.RCP
 
             _animator = guideModelRoot.GetComponentInChildren<Animator>(true);
             _legacyAnimation = guideModelRoot.GetComponentInChildren<Animation>(true);
+
+            // Seguridad en runtime: nunca permitir cámaras o luces embebidas de un FBX.
+            foreach (var cam in guideModelRoot.GetComponentsInChildren<Camera>(true))
+            {
+                if (cam != null) cam.enabled = false;
+            }
+            foreach (var l in guideModelRoot.GetComponentsInChildren<Light>(true))
+            {
+                if (l != null) l.enabled = false;
+            }
         }
     }
 }

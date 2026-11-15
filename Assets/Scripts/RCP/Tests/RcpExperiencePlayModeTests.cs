@@ -166,6 +166,9 @@ namespace NasaVR.RCP.Tests
             InvokeHotspotTouch("Objeto_confirmar", fromHover: false);
             yield return WaitForStep(steps, "p5", 2f);
             Assert.AreEqual("p5", steps.CurrentStep?.stepId);
+            var repoBtn = GameObject.Find("BtnReposition")?.GetComponent<UnityEngine.UI.Button>();
+            Assert.IsNotNull(repoBtn);
+            Assert.IsFalse(repoBtn.interactable, "BtnReposition debe bloquearse en p5 al acercar las manos al pecho.");
             yield return WaitForActivePhase(steps, 2f);
 
             InvokeHotspotTouch("Objeto_pecho", fromHover: false);
@@ -179,9 +182,10 @@ namespace NasaVR.RCP.Tests
             Assert.IsNotNull(monitor);
             Assert.IsTrue(metronome.IsActive, "El metrónomo de 110 LPM debe activarse al llegar a p6.");
             Assert.IsTrue(guideVisual.IsShowing, "Las manos guía 3D (CPR-Guide.fbx) deben aparecer al iniciar compresiones.");
+            Assert.AreEqual(0, guideVisual.GetComponentsInChildren<Camera>(true).Length, "GuiaManosRCP no debe incluir cámaras importadas del FBX.");
+            Assert.AreEqual(0, guideVisual.GetComponentsInChildren<Light>(true).Length, "GuiaManosRCP no debe incluir luces importadas del FBX.");
+            Assert.AreEqual(1, Object.FindObjectsByType<Camera>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Length, "Solo debe haber 1 cámara activa en p6.");
             Assert.AreEqual(CardiacMonitorMode.Compressions, ecgMonitor.CurrentMode);
-            var repoBtn = GameObject.Find("BtnReposition")?.GetComponent<UnityEngine.UI.Button>();
-            Assert.IsNotNull(repoBtn);
             Assert.IsFalse(repoBtn.interactable, "BtnReposition debe bloquearse durante compresiones para no mover el cuerpo.");
 
             // Sin manos cerca debe alertar HandsAwayFromChest; con compresiones a ~110 LPM debe validar InPositionGoodRate.
