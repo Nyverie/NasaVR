@@ -63,10 +63,10 @@ namespace NasaVR.RCP
                 return;
             }
 
-            // En XR permite confirmar con Gatillo/Select tras un breve respiro de 0.35s.
+            // En XR permite confirmar con Gatillo del mando o Pellizco de manos tras un breve respiro de 0.35s.
             if (XRSettings.isDeviceActive && Time.time - _enteredPlacementAt > 0.35f)
             {
-                if (IsAnyXrSelectPressedThisFrame())
+                if (RcpHandInputHelper.WasSelectPressedThisFrame())
                 {
                     ConfirmPlacement();
                 }
@@ -159,18 +159,6 @@ namespace NasaVR.RCP
                 targetPoint.y + 0.08f, // Pecho ligeramente elevado sobre el piso/colchoneta
                 cam.transform.position.z + dir.y * dist);
             transform.rotation = Quaternion.LookRotation(new Vector3(dir.x, 0f, dir.y), Vector3.up);
-        }
-
-        private static bool IsAnyXrSelectPressedThisFrame()
-        {
-            var devices = new System.Collections.Generic.List<UnityEngine.XR.InputDevice>();
-            InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.Controller, devices);
-            for (int i = 0; i < devices.Count; i++)
-            {
-                if (devices[i].TryGetFeatureValue(UnityEngine.XR.CommonUsages.triggerButton, out bool trigger) && trigger)
-                    return true;
-            }
-            return false;
         }
     }
 }

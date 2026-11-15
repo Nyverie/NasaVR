@@ -51,6 +51,7 @@ namespace NasaVR.RCP
         [SerializeField] private RcpMetronome metronome;
         [SerializeField] private RcpPatientLocator patientLocator;
         [SerializeField] private RcpCompressionMonitor compressionMonitor;
+        [SerializeField] private RcpCardiacMonitorUI cardiacMonitor;
 
         private StepSystem _steps;
         private StepDefinition _currentStep;
@@ -82,6 +83,7 @@ namespace NasaVR.RCP
             if (metronome == null) metronome = FindFirstObjectByType<RcpMetronome>();
             if (patientLocator == null) patientLocator = FindFirstObjectByType<RcpPatientLocator>();
             if (compressionMonitor == null) compressionMonitor = FindFirstObjectByType<RcpCompressionMonitor>();
+            if (cardiacMonitor == null) cardiacMonitor = GetComponentInChildren<RcpCardiacMonitorUI>(true);
 
             if (SimulationManager.Instance != null && SimulationManager.Instance.Steps != null)
             {
@@ -145,6 +147,7 @@ namespace NasaVR.RCP
             _steps = steps;
             if (_steps == null) return;
 
+            cardiacMonitor?.Bind(_steps);
             _steps.StepStarted += HandleStepStarted;
             _steps.StepFailed += HandleStepFailed;
             _steps.StepsFinished += HandleStepsFinished;
@@ -214,7 +217,7 @@ namespace NasaVR.RCP
                 else if (step != null && step.stepType == StepType.NonInteractive)
                     statusBadgeText.text = es ? "Escucha las indicaciones" : "Listen to guidance";
                 else
-                    statusBadgeText.text = es ? "Toca la marca resaltada" : "Touch the highlighted marker";
+                    statusBadgeText.text = es ? "Trigger / Pellizca o toca la marca" : "Trigger / Pinch or touch marker";
             }
 
             // Si no hay audio o antes de que arranque LineStarted, mostramos texto base de la instrucción.
@@ -308,8 +311,8 @@ namespace NasaVR.RCP
                 stepTitleText.text = es ? "Alinea al paciente en el piso" : "Align patient on the floor";
             if (subtitleText != null)
                 subtitleText.text = es
-                    ? "Apunta hacia el pecho de la persona en el piso y toca CONFIRMAR AQUÍ (o presiona Trigger / Espacio)."
-                    : "Aim at the person's chest on the floor and tap CONFIRM HERE (or press Trigger / Space).";
+                    ? "Apunta al pecho en el piso y haz Trigger o Pellizco (o toca CONFIRMAR AQUÍ)."
+                    : "Aim at the chest on the floor and pull Trigger or Pinch (or tap CONFIRM HERE).";
             if (statusBadgeText != null)
                 statusBadgeText.text = es ? "Esperando ubicación" : "Waiting placement";
 

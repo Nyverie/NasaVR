@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
+using UnityEngine.XR.Interaction.Toolkit.Interactables;
 using XRLabs.Core;
 using XRLabs.Interactions;
 
@@ -20,7 +21,9 @@ namespace NasaVR.RCP
         [SerializeField] private RcpCompressionMonitor compressionMonitor;
 
         private readonly Dictionary<string, Renderer[]> _targetRenderers = new();
+        private readonly Dictionary<string, Transform> _targetTransforms = new();
         private readonly Dictionary<Renderer, Color> _baseColors = new();
+        private readonly HashSet<string> _hoveredTargets = new();
         private StepSystem _steps;
         private RcpMetronome _metronome;
         private string _activeTargetId;
@@ -142,6 +145,15 @@ namespace NasaVR.RCP
                 pulse = Mathf.Max(pulse * 0.35f, _metronome.BeatPulse);
             }
 
+            foreach (var kvp in _targetTransforms)
+            {
+                if (kvp.Value == null) continue;
+                bool isActive = kvp.Key == _activeTargetId;
+                bool isHovered = _hoveredTargets.Contains(kvp.Key);
+                float targetScale = isHovered ? 1.14f : (isActive ? 1f + 0.06f * pulse : 1f);
+                kvp.Value.localScale = Vector3.Lerp(kvp.Value.localScale, Vector3.one * targetScale, Time.deltaTime * 12f);
+            }
+
             Color baseGlow = alert ? AlertPulseEmission : PulseEmission;
             Color emission = baseGlow * (0.6f + pulse * 1.8f);
             foreach (var r in renderers)
@@ -152,7 +164,8 @@ namespace NasaVR.RCP
                 if (mat.HasProperty(EmissionColorId))
                 {
                     mat.EnableKeyword("_EMISSION");
-                    mat.SetColor(EmissionColorId, emission);
+                    Color boost = _hoveredTargets.Contains(_activeTargetId) ? emission * 1.35f : emission;
+                    mat.SetColor(EmissionColorId, boost);
                 }
             }
         }
@@ -185,7 +198,10 @@ namespace NasaVR.RCP
                     var mat = r.material;
                     if (mat == null) continue;
 
-                    Color targetColor = isActive ? ActiveColor : InactiveColor;
+                    Color baseCol = _baseColors.TryGetValue(r, out var orig) ? orig : ActiveColor;
+                    Color targetColor = isActive
+                        ? baseCol
+                        : new Color(baseCol.r * 0.45f, baseCol.g * 0.45f, baseCol.b * 0.45f, Mathf.Min(baseCol.a, 0.72f));
                     if (mat.HasProperty(BaseColorId)) mat.SetColor(BaseColorId, targetColor);
                     if (mat.HasProperty(ColorId)) mat.SetColor(ColorId, targetColor);
 
@@ -200,15 +216,27 @@ namespace NasaVR.RCP
         private void CacheTargets()
         {
             _targetRenderers.Clear();
+            _targetTransforms.Clear();
             _baseColors.Clear();
+            _hoveredTargets.Clear();
 
             foreach (var target in GetComponentsInChildren<SceneTarget>(true))
             {
                 if (target == null || string.IsNullOrEmpty(target.TargetId)) continue;
+                string id = target.TargetId;
+                _targetTransforms[id] = target.transform;
+
+                var interactable = target.GetComponent<XRSimpleInteractable>();
+                if (interactable != null)
+                {
+                    interactable.hoverEntered.AddListener(_ => _hoveredTargets.Add(id));
+                    interactable.hoverExited.AddListener(_ => _hoveredTargets.Remove(id));
+                }
+
                 var renderers = new List<Renderer>();
                 foreach (var r in target.GetComponentsInChildren<Renderer>(true))
                 {
-                    if (r == null || r.GetComponent<TMPro.TMP_Text>() != null) continue;
+                    if (r == null || r.GetComponent<TMPro.TMP_Text>() != null || r.gameObject.name == "PillBg") continue;
                     renderers.Add(r);
                     if (r.sharedMaterial != null && r.sharedMaterial.HasProperty(BaseColorId))
                     {
@@ -216,7 +244,7 @@ namespace NasaVR.RCP
                     }
                 }
 
-                _targetRenderers[target.TargetId] = renderers.ToArray();
+                _targetRenderers[id] = renderers.ToArray();
             }
 
             // Asegura que todos los hotspots permitan toque directo y tengan collider suficiente para manos/rayo.

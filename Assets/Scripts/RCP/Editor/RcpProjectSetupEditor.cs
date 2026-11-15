@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using TMPro;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
@@ -562,35 +563,31 @@ namespace NasaVR.RCP.Editor
                 dirSo.ApplyModifiedPropertiesWithoutUndo();
             }
 
-            // Silueta corporal en piso y reticle Paso 0 (sin colliders)
+            // Silueta corporal holográfica translúcida y reticle Paso 0
             var floorReticle = CreatePatientSilhouetteAndReticle(colocacionGo.transform);
 
-            CreateHotspot(
+            CreateShouldersHotspot(
                 colocacionGo.transform,
-                "Objeto_hombros",
-                "hombros",
-                "Hombros\n(Tocar)",
-                new Vector3(0.20f, 0.06f, 0.12f),
-                PrimitiveType.Sphere,
-                new Vector3(0.13f, 0.13f, 0.13f),
-                new Color(0.12f, 0.72f, 0.95f, 0.92f));
+                new Vector3(0f, 0.055f, 0.16f));
 
-            var chestHotspot = CreateHotspot(
+            var chestHotspot = CreateChestHotspot(
                 colocacionGo.transform,
-                "Objeto_pecho",
-                "pecho",
-                "Centro del pecho\n(Compresiones)",
-                new Vector3(0f, 0.02f, 0f),
-                PrimitiveType.Cylinder,
-                new Vector3(0.16f, 0.024f, 0.16f),
-                new Color(0.15f, 0.88f, 0.72f, 0.94f));
+                new Vector3(0f, 0.02f, 0f));
 
             CreateCall911Hotspot(
                 colocacionGo.transform,
-                new Vector3(-0.34f, 0.18f, 0.12f));
+                new Vector3(-0.34f, 0.16f, 0.10f));
 
-            // [RCP_HUD]: Panel compacto pegado directamente sobre [Colocacion]
-            var hud = CreateHud(scene, colocacionGo.transform, placementCtrl, metronome);
+            var handsGuideGo = CreateCompressionHandsGuide(colocacionGo.transform, new Vector3(0f, 0.03f, 0f));
+            var handsGuideCtrl = colocacionGo.AddComponent<RcpCompressionGuideVisual>();
+            var guideSo = new SerializedObject(handsGuideCtrl);
+            guideSo.FindProperty("guideModelRoot").objectReferenceValue = handsGuideGo;
+            guideSo.FindProperty("metronome").objectReferenceValue = metronome;
+            guideSo.FindProperty("patientLocator").objectReferenceValue = patientLocator;
+            guideSo.ApplyModifiedPropertiesWithoutUndo();
+
+            // [RCP_HUD]: Panel compacto pegado directamente sobre [Colocacion] con Monitor ECG en vivo
+            var hud = CreateHud(scene, colocacionGo.transform, placementCtrl, metronome, compressionMonitor, stepSystem);
             var hudSo = new SerializedObject(hud);
             hudSo.FindProperty("patientLocator").objectReferenceValue = patientLocator;
             hudSo.FindProperty("compressionMonitor").objectReferenceValue = compressionMonitor;
@@ -642,33 +639,77 @@ namespace NasaVR.RCP.Editor
             var bodyRoot = new GameObject("SiluetaPaciente");
             bodyRoot.transform.SetParent(parent, false);
 
-            var bodyMat = CreateUrpLitMaterial(new Color(0.08f, 0.36f, 0.54f, 0.85f));
-            var accentMat = CreateUrpLitMaterial(new Color(0.16f, 0.86f, 0.78f, 0.95f));
+            var holoMat = CreateUrpLitMaterial(new Color(0.08f, 0.56f, 0.78f, 0.32f), transparent: true, emissionBoost: 0.45f);
+            var clavMat = CreateUrpLitMaterial(new Color(0.18f, 0.88f, 0.86f, 0.52f), transparent: true, emissionBoost: 0.65f);
 
-            void AddPart(string name, PrimitiveType shape, Vector3 localPos, Vector3 scale, Material mat, Transform p = null)
+            void AddPart(string name, PrimitiveType shape, Vector3 localPos, Vector3 rot, Vector3 scale, Material mat, Transform p = null)
             {
                 var part = GameObject.CreatePrimitive(shape);
                 part.name = name;
                 part.transform.SetParent(p ?? bodyRoot.transform, false);
                 part.transform.localPosition = localPos;
+                part.transform.localEulerAngles = rot;
                 part.transform.localScale = scale;
                 var col = part.GetComponent<Collider>();
                 if (col != null) UnityEngine.Object.DestroyImmediate(col);
                 part.GetComponent<Renderer>().sharedMaterial = mat;
             }
 
-            // Torso y cabeza supinos para alinear exactamente sobre la persona real
-            AddPart("TorsoBase", PrimitiveType.Cube, new Vector3(0f, -0.055f, 0.02f), new Vector3(0.42f, 0.03f, 0.46f), bodyMat);
-            AddPart("CabezaGuia", PrimitiveType.Cylinder, new Vector3(0f, -0.05f, 0.34f), new Vector3(0.18f, 0.02f, 0.21f), bodyMat);
+            // Silueta anatómica supina translúcida (tórax, hombros, clavículas, cuello y cabeza)
+            AddPart("ToraxSuperior", PrimitiveType.Capsule, new Vector3(0f, -0.055f, 0.03f), new Vector3(90f, 0f, 0f), new Vector3(0.30f, 0.22f, 0.09f), holoMat);
+            AddPart("AbdomenBase", PrimitiveType.Capsule, new Vector3(0f, -0.062f, -0.14f), new Vector3(90f, 0f, 0f), new Vector3(0.25f, 0.14f, 0.08f), holoMat);
+            AddPart("HombroIzq", PrimitiveType.Sphere, new Vector3(-0.17f, -0.05f, 0.14f), Vector3.zero, new Vector3(0.11f, 0.065f, 0.12f), holoMat);
+            AddPart("HombroDer", PrimitiveType.Sphere, new Vector3(0.17f, -0.05f, 0.14f), Vector3.zero, new Vector3(0.11f, 0.065f, 0.12f), holoMat);
+            AddPart("ClaviculaGuia", PrimitiveType.Capsule, new Vector3(0f, -0.032f, 0.14f), new Vector3(0f, 0f, 90f), new Vector3(0.025f, 0.16f, 0.025f), clavMat);
+            AddPart("EsternonGuia", PrimitiveType.Capsule, new Vector3(0f, -0.022f, 0.02f), new Vector3(90f, 0f, 0f), new Vector3(0.035f, 0.10f, 0.02f), clavMat);
+            AddPart("CuelloGuia", PrimitiveType.Cylinder, new Vector3(0f, -0.052f, 0.22f), new Vector3(90f, 0f, 0f), new Vector3(0.085f, 0.05f, 0.065f), holoMat);
+            AddPart("CabezaGuia", PrimitiveType.Sphere, new Vector3(0f, -0.035f, 0.34f), Vector3.zero, new Vector3(0.165f, 0.135f, 0.205f), holoMat);
 
             // Reticle luminoso en piso visible durante Paso 0 ("Ubicar paciente")
             var reticle = new GameObject("ReticlePiso");
             reticle.transform.SetParent(parent, false);
-            reticle.transform.localPosition = new Vector3(0f, -0.065f, 0.02f);
-            AddPart("AnilloExterior", PrimitiveType.Cylinder, Vector3.zero, new Vector3(0.85f, 0.008f, 0.85f), accentMat, reticle.transform);
-            AddPart("CentroPecho", PrimitiveType.Cylinder, new Vector3(0f, 0.006f, 0f), new Vector3(0.24f, 0.01f, 0.24f), CreateUrpLitMaterial(new Color(0.20f, 1f, 0.70f, 1f)), reticle.transform);
+            reticle.transform.localPosition = new Vector3(0f, -0.068f, 0.02f);
+            AddPart("AnilloExterior", PrimitiveType.Cylinder, Vector3.zero, Vector3.zero, new Vector3(0.82f, 0.006f, 0.82f), clavMat, reticle.transform);
+            AddPart("CentroPecho", PrimitiveType.Cylinder, new Vector3(0f, 0.005f, 0f), Vector3.zero, new Vector3(0.22f, 0.008f, 0.22f),
+                CreateUrpLitMaterial(new Color(0.20f, 1f, 0.70f, 0.88f), transparent: true, emissionBoost: 0.9f), reticle.transform);
 
             return reticle.transform;
+        }
+
+        private static GameObject CreateShouldersHotspot(Transform parent, Vector3 localPos)
+        {
+            var go = new GameObject("Objeto_hombros");
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPos;
+
+            var padMat = CreateUrpLitMaterial(new Color(0.18f, 0.78f, 0.98f, 0.88f), transparent: true, emissionBoost: 0.55f);
+            var barMat = CreateUrpLitMaterial(new Color(0.45f, 0.92f, 1f, 0.65f), transparent: true, emissionBoost: 0.4f);
+
+            AddPrimitiveVisual(go.transform, "PadHombroIzq", PrimitiveType.Cylinder, new Vector3(-0.17f, 0f, 0f), Vector3.zero, new Vector3(0.10f, 0.012f, 0.10f), padMat);
+            AddPrimitiveVisual(go.transform, "PadHombroDer", PrimitiveType.Cylinder, new Vector3(0.17f, 0f, 0f), Vector3.zero, new Vector3(0.10f, 0.012f, 0.10f), padMat);
+            AddPrimitiveVisual(go.transform, "PuenteHombros", PrimitiveType.Capsule, new Vector3(0f, 0.005f, 0f), new Vector3(0f, 0f, 90f), new Vector3(0.018f, 0.16f, 0.018f), barMat);
+
+            ConfigureHotspotBehavior(go, "hombros", 0.21f);
+            CreateHotspotLabel(go.transform, "TOCAR HOMBROS", new Vector3(0f, 0.095f, 0f));
+            return go;
+        }
+
+        private static GameObject CreateChestHotspot(Transform parent, Vector3 localPos)
+        {
+            var go = new GameObject("Objeto_pecho");
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPos;
+
+            var ringMat = CreateUrpLitMaterial(new Color(0.15f, 0.88f, 0.72f, 0.58f), transparent: true, emissionBoost: 0.65f);
+            var crossMat = CreateUrpLitMaterial(new Color(0.28f, 1f, 0.78f, 0.92f), transparent: true, emissionBoost: 0.95f);
+
+            AddPrimitiveVisual(go.transform, "AnilloEsternon", PrimitiveType.Cylinder, Vector3.zero, Vector3.zero, new Vector3(0.19f, 0.008f, 0.19f), ringMat);
+            AddPrimitiveVisual(go.transform, "CruzMedicaV", PrimitiveType.Cube, new Vector3(0f, 0.006f, 0f), Vector3.zero, new Vector3(0.028f, 0.008f, 0.10f), crossMat);
+            AddPrimitiveVisual(go.transform, "CruzMedicaH", PrimitiveType.Cube, new Vector3(0f, 0.006f, 0f), Vector3.zero, new Vector3(0.10f, 0.008f, 0.028f), crossMat);
+
+            ConfigureHotspotBehavior(go, "pecho", 0.14f);
+            CreateHotspotLabel(go.transform, "CENTRO DEL PECHO", new Vector3(0f, 0.09f, -0.09f));
+            return go;
         }
 
         private static GameObject CreateCall911Hotspot(Transform parent, Vector3 localPos)
@@ -678,122 +719,189 @@ namespace NasaVR.RCP.Editor
             go.transform.localPosition = localPos;
 
             var darkMat = CreateUrpLitMaterial(new Color(0.10f, 0.14f, 0.20f, 1f));
-            var sosMat = CreateUrpLitMaterial(new Color(0.88f, 0.18f, 0.18f, 1f));
-            var whiteMat = CreateUrpLitMaterial(Color.white);
+            var sosMat = CreateUrpLitMaterial(new Color(0.88f, 0.18f, 0.18f, 1f), emissionBoost: 0.55f);
+            var whiteMat = CreateUrpLitMaterial(Color.white, emissionBoost: 0.2f);
+            var beaconMat = CreateUrpLitMaterial(new Color(0.20f, 0.72f, 1f, 0.92f), transparent: true, emissionBoost: 0.9f);
 
-            void AddVisual(string name, PrimitiveType type, Vector3 pos, Vector3 rot, Vector3 scale, Material mat)
+            // Consola compacta SOS 911 en 3D
+            AddPrimitiveVisual(go.transform, "BaseConsola", PrimitiveType.Cube, new Vector3(0f, -0.015f, 0f), new Vector3(-18f, 0f, 0f), new Vector3(0.16f, 0.105f, 0.026f), darkMat);
+            AddPrimitiveVisual(go.transform, "BotonSOS", PrimitiveType.Cube, new Vector3(0f, -0.015f, -0.011f), new Vector3(-18f, 0f, 0f), new Vector3(0.135f, 0.082f, 0.015f), sosMat);
+            AddPrimitiveVisual(go.transform, "TelefonoBarra", PrimitiveType.Cube, new Vector3(0f, -0.008f, -0.021f), new Vector3(-18f, 0f, 30f), new Vector3(0.068f, 0.016f, 0.012f), whiteMat);
+            AddPrimitiveVisual(go.transform, "TelefonoAuricularA", PrimitiveType.Sphere, new Vector3(-0.025f, -0.022f, -0.021f), Vector3.zero, new Vector3(0.021f, 0.021f, 0.015f), whiteMat);
+            AddPrimitiveVisual(go.transform, "TelefonoAuricularB", PrimitiveType.Sphere, new Vector3(0.025f, 0.006f, -0.021f), Vector3.zero, new Vector3(0.021f, 0.021f, 0.015f), whiteMat);
+            AddPrimitiveVisual(go.transform, "BalizaRoja", PrimitiveType.Cylinder, new Vector3(-0.022f, 0.045f, 0f), Vector3.zero, new Vector3(0.032f, 0.014f, 0.032f), sosMat);
+            AddPrimitiveVisual(go.transform, "BalizaAzul", PrimitiveType.Cylinder, new Vector3(0.022f, 0.045f, 0f), Vector3.zero, new Vector3(0.032f, 0.014f, 0.032f), beaconMat);
+
+            ConfigureHotspotBehavior(go, "confirmar", 0.13f);
+            CreateHotspotLabel(go.transform, "911 • LLAMAR", new Vector3(0f, 0.095f, 0f));
+            return go;
+        }
+
+        private static GameObject CreateCompressionHandsGuide(Transform parent, Vector3 localPos)
+        {
+            const string modelPath = "Assets/Models/CPR-Guide.fbx";
+            const string controllerPath = "Assets/Models/CPR-Guide.controller";
+
+            var holder = new GameObject("GuiaManosRCP");
+            holder.transform.SetParent(parent, false);
+            holder.transform.localPosition = localPos;
+
+            if (File.Exists(modelPath))
             {
-                var p = GameObject.CreatePrimitive(type);
-                p.name = name;
-                p.transform.SetParent(go.transform, false);
-                p.transform.localPosition = pos;
-                p.transform.localEulerAngles = rot;
-                p.transform.localScale = scale;
-                var c = p.GetComponent<Collider>();
-                if (c != null) UnityEngine.Object.DestroyImmediate(c);
-                p.GetComponent<Renderer>().sharedMaterial = mat;
+                AssetDatabase.ImportAsset(modelPath, ImportAssetOptions.ForceUpdate);
+                if (AssetImporter.GetAtPath(modelPath) is ModelImporter importer)
+                {
+                    importer.animationType = ModelImporterAnimationType.Generic;
+                    var clipAnims = importer.clipAnimations != null && importer.clipAnimations.Length > 0
+                        ? importer.clipAnimations
+                        : importer.defaultClipAnimations;
+                    for (int i = 0; i < clipAnims.Length; i++)
+                    {
+                        clipAnims[i].loopTime = true;
+                    }
+                    if (clipAnims.Length > 0)
+                    {
+                        importer.clipAnimations = clipAnims;
+                    }
+                    importer.SaveAndReimport();
+                }
+
+                var modelAsset = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+                if (modelAsset != null)
+                {
+                    var inst = (GameObject)PrefabUtility.InstantiatePrefab(modelAsset, holder.transform);
+                    inst.name = "CPR-Guide_Model";
+
+                    // Quita cualquier collider del modelo para no interferir con raycasts de Objeto_pecho.
+                    foreach (var c in inst.GetComponentsInChildren<Collider>(true))
+                    {
+                        UnityEngine.Object.DestroyImmediate(c);
+                    }
+
+                    // Normaliza escala y apoyo sobre el esternón sin importar escala original del FBX.
+                    var renderers = inst.GetComponentsInChildren<Renderer>(true);
+                    var holoHandsMat = CreateUrpLitMaterial(new Color(0.20f, 0.94f, 0.88f, 0.72f), transparent: true, emissionBoost: 0.45f);
+                    if (renderers.Length > 0)
+                    {
+                        Bounds combined = renderers[0].bounds;
+                        for (int i = 0; i < renderers.Length; i++)
+                        {
+                            combined.Encapsulate(renderers[i].bounds);
+                            renderers[i].sharedMaterial = holoHandsMat;
+                        }
+
+                        float maxHoriz = Mathf.Max(combined.size.x, combined.size.z, 0.001f);
+                        float scale = 0.24f / maxHoriz;
+                        inst.transform.localScale = Vector3.one * scale;
+                        float minYOffset = -combined.min.y * scale;
+                        inst.transform.localPosition = new Vector3(0f, minYOffset, 0f);
+                    }
+
+                    var clips = AssetDatabase.LoadAllAssetsAtPath(modelPath).OfType<AnimationClip>()
+                        .Where(c => c != null && !c.name.StartsWith("__preview__", StringComparison.Ordinal))
+                        .ToArray();
+
+                    if (clips.Length > 0)
+                    {
+                        if (File.Exists(controllerPath)) AssetDatabase.DeleteAsset(controllerPath);
+                        var controller = AnimatorController.CreateAnimatorControllerAtPath(controllerPath);
+                        controller.AddMotion(clips[0]);
+
+                        var animator = inst.GetComponent<Animator>();
+                        if (animator == null) animator = inst.AddComponent<Animator>();
+                        animator.runtimeAnimatorController = controller;
+                    }
+                }
             }
 
-            // Consola tipo teléfono/botón SOS 911 en 3D
-            AddVisual("BaseConsola", PrimitiveType.Cube, new Vector3(0f, -0.02f, 0f), new Vector3(-18f, 0f, 0f), new Vector3(0.20f, 0.13f, 0.03f), darkMat);
-            AddVisual("BotonSOS", PrimitiveType.Cube, new Vector3(0f, -0.02f, -0.014f), new Vector3(-18f, 0f, 0f), new Vector3(0.17f, 0.10f, 0.018f), sosMat);
-            // Auricular estilizado 3D en blanco sobre el botón rojo
-            AddVisual("TelefonoBarra", PrimitiveType.Cube, new Vector3(0f, -0.01f, -0.026f), new Vector3(-18f, 0f, 30f), new Vector3(0.085f, 0.020f, 0.014f), whiteMat);
-            AddVisual("TelefonoAuricularA", PrimitiveType.Sphere, new Vector3(-0.032f, -0.028f, -0.026f), Vector3.zero, new Vector3(0.026f, 0.026f, 0.018f), whiteMat);
-            AddVisual("TelefonoAuricularB", PrimitiveType.Sphere, new Vector3(0.032f, 0.008f, -0.026f), Vector3.zero, new Vector3(0.026f, 0.026f, 0.018f), whiteMat);
-            AddVisual("BalizaSOS", PrimitiveType.Cylinder, new Vector3(0f, 0.055f, 0f), Vector3.zero, new Vector3(0.05f, 0.018f, 0.05f), sosMat);
-
-            var col = go.AddComponent<SphereCollider>();
-            col.radius = 0.13f;
-
-            go.AddComponent<XRSimpleInteractable>();
-            var hotspot = go.AddComponent<TouchableHotspot>();
-            SetSerializedField(hotspot, "interactionId", "confirmar");
-            SetSerializedField(hotspot, "triggerOnTouch", true);
-            SetSerializedField(hotspot, "oneShot", true);
-
-            var target = go.AddComponent<SceneTarget>();
-            SetSerializedField(target, "targetId", "confirmar");
-
-            var labelGo = new GameObject("Etiqueta");
-            labelGo.transform.SetParent(go.transform, false);
-            labelGo.transform.localPosition = new Vector3(0f, 0.14f, 0f);
-            var fc = labelGo.AddComponent<FaceCamera>();
-            SetSerializedField(fc, "backToCamera", true);
-
-            var tmp = labelGo.AddComponent<TextMeshPro>();
-            tmp.text = "911 • LLAMAR\n(Tocar al terminar)";
-            tmp.fontSize = 1.15f;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = Color.white;
-            tmp.rectTransform.sizeDelta = new Vector2(1.2f, 0.4f);
-
-            return go;
+            holder.SetActive(false);
+            return holder;
         }
 
-        private static GameObject CreateHotspot(Transform parent, string goName, string id, string labelText,
-            Vector3 localPos, PrimitiveType shape, Vector3 scale, Color color)
+        private static void AddPrimitiveVisual(Transform parent, string name, PrimitiveType type, Vector3 pos, Vector3 rot, Vector3 scale, Material mat)
         {
-            var go = new GameObject(goName);
-            go.transform.SetParent(parent, false);
-            go.transform.localPosition = localPos;
+            var p = GameObject.CreatePrimitive(type);
+            p.name = name;
+            p.transform.SetParent(parent, false);
+            p.transform.localPosition = pos;
+            p.transform.localEulerAngles = rot;
+            p.transform.localScale = scale;
+            var c = p.GetComponent<Collider>();
+            if (c != null) UnityEngine.Object.DestroyImmediate(c);
+            p.GetComponent<Renderer>().sharedMaterial = mat;
+        }
 
-            var visual = GameObject.CreatePrimitive(shape);
-            visual.name = "Marker";
-            visual.transform.SetParent(go.transform, false);
-            visual.transform.localScale = scale;
-            // Quitamos el collider del hijo visual para dejar un collider único de tamaño cómodo en el hotspot.
-            var childCol = visual.GetComponent<Collider>();
-            if (childCol != null) UnityEngine.Object.DestroyImmediate(childCol);
-
-            var mat = CreateUrpLitMaterial(color);
-            visual.GetComponent<Renderer>().sharedMaterial = mat;
-
+        private static void ConfigureHotspotBehavior(GameObject go, string interactionId, float colliderRadius)
+        {
             var col = go.AddComponent<SphereCollider>();
-            col.radius = 0.11f;
+            col.radius = colliderRadius;
 
             go.AddComponent<XRSimpleInteractable>();
             var hotspot = go.AddComponent<TouchableHotspot>();
-            SetSerializedField(hotspot, "interactionId", id);
-            SetSerializedField(hotspot, "triggerOnTouch", true);
+            SetSerializedField(hotspot, "interactionId", interactionId);
+            // Requiere Trigger / Pellizco / toque físico directo (no solo apuntar con el láser).
+            SetSerializedField(hotspot, "triggerOnTouch", false);
             SetSerializedField(hotspot, "oneShot", true);
 
             var target = go.AddComponent<SceneTarget>();
-            SetSerializedField(target, "targetId", id);
+            SetSerializedField(target, "targetId", interactionId);
+        }
 
-            // Etiqueta flotante orientada al usuario
+        private static void CreateHotspotLabel(Transform parent, string text, Vector3 localPos)
+        {
             var labelGo = new GameObject("Etiqueta");
-            labelGo.transform.SetParent(go.transform, false);
-            labelGo.transform.localPosition = new Vector3(0f, 0.14f, 0f);
+            labelGo.transform.SetParent(parent, false);
+            labelGo.transform.localPosition = localPos;
             var fc = labelGo.AddComponent<FaceCamera>();
             SetSerializedField(fc, "backToCamera", true);
 
-            var tmp = labelGo.AddComponent<TextMeshPro>();
-            tmp.text = labelText;
-            tmp.fontSize = 1.10f;
+            var bg = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            bg.name = "PillBg";
+            bg.transform.SetParent(labelGo.transform, false);
+            bg.transform.localPosition = new Vector3(0f, 0f, 0.004f);
+            bg.transform.localScale = new Vector3(0.24f, 0.052f, 0.004f);
+            var bgCol = bg.GetComponent<Collider>();
+            if (bgCol != null) UnityEngine.Object.DestroyImmediate(bgCol);
+            bg.GetComponent<Renderer>().sharedMaterial = CreateUrpLitMaterial(new Color(0.05f, 0.09f, 0.14f, 0.85f), transparent: true);
+
+            var textGo = new GameObject("Texto");
+            textGo.transform.SetParent(labelGo.transform, false);
+            var tmp = textGo.AddComponent<TextMeshPro>();
+            tmp.text = text;
+            tmp.fontSize = 0.21f;
+            tmp.fontStyle = FontStyles.Bold;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = Color.white;
-            tmp.rectTransform.sizeDelta = new Vector2(1.2f, 0.4f);
-
-            return go;
+            tmp.rectTransform.sizeDelta = new Vector2(0.40f, 0.09f);
         }
 
-        private static Material CreateUrpLitMaterial(Color color)
+        private static Material CreateUrpLitMaterial(Color color, bool transparent = false, float emissionBoost = 0.30f)
         {
             Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
             var mat = new Material(shader);
             mat.color = color;
             if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
-            if (mat.HasProperty("_EmissionColor"))
+            if (transparent)
+            {
+                if (mat.HasProperty("_Surface")) mat.SetFloat("_Surface", 1f);
+                if (mat.HasProperty("_Blend")) mat.SetFloat("_Blend", 0f);
+                if (mat.HasProperty("_SrcBlend")) mat.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+                if (mat.HasProperty("_DstBlend")) mat.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+                if (mat.HasProperty("_ZWrite")) mat.SetInt("_ZWrite", 0);
+                mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                mat.renderQueue = (int)RenderQueue.Transparent;
+            }
+            if (emissionBoost > 0f && mat.HasProperty("_EmissionColor"))
             {
                 mat.EnableKeyword("_EMISSION");
-                mat.SetColor("_EmissionColor", color * 0.35f);
+                mat.SetColor("_EmissionColor", color * emissionBoost);
             }
             return mat;
         }
 
         private static RcpExperienceHUD CreateHud(Scene scene, Transform patientAnchorParent,
-            RcpPlacementController placementCtrl, RcpMetronome metronome)
+            RcpPlacementController placementCtrl, RcpMetronome metronome,
+            RcpCompressionMonitor compressionMonitor, StepSystem stepSystem)
         {
             var root = new GameObject("[RCP_HUD]");
             SceneManager.MoveGameObjectToScene(root, scene);
@@ -805,9 +913,9 @@ namespace NasaVR.RCP.Editor
             var canvas = root.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             var rt = root.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(1150f, 680f);
-            rt.localScale = Vector3.one * 0.00046f;
-            rt.localPosition = new Vector3(0f, 0.44f, 0.34f);
+            rt.sizeDelta = new Vector2(1150f, 700f);
+            rt.localScale = Vector3.one * 0.00040f;
+            rt.localPosition = new Vector3(0f, 0.42f, 0.36f);
             rt.localRotation = Quaternion.Euler(22f, 0f, 0f);
 
             root.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 10f;
@@ -821,36 +929,60 @@ namespace NasaVR.RCP.Editor
             var accent = CreateUiBox("AccentBar", root.transform, new Vector2(0f, 0f), new Vector2(0.014f, 1f), new Color(0.14f, 0.78f, 0.82f, 1f)).GetComponent<Image>();
             accent.raycastTarget = false;
 
-            var headerText = CreateUiText("Header", root.transform, new Vector2(0.04f, 0.86f), new Vector2(0.68f, 0.96f), 19f, FontStyles.Bold, new Color(0.55f, 0.90f, 0.96f, 1f), TextAlignmentOptions.Left);
-            var badgeText = CreateUiText("StatusBadge", root.transform, new Vector2(0.68f, 0.86f), new Vector2(0.96f, 0.96f), 18f, FontStyles.Bold, new Color(0.95f, 0.88f, 0.45f, 1f), TextAlignmentOptions.Right);
+            var headerText = CreateUiText("Header", root.transform, new Vector2(0.04f, 0.88f), new Vector2(0.64f, 0.97f), 17f, FontStyles.Bold, new Color(0.55f, 0.90f, 0.96f, 1f), TextAlignmentOptions.Left);
+            var badgeText = CreateUiText("StatusBadge", root.transform, new Vector2(0.64f, 0.88f), new Vector2(0.96f, 0.97f), 16f, FontStyles.Bold, new Color(0.95f, 0.88f, 0.45f, 1f), TextAlignmentOptions.Right);
 
-            var titleText = CreateUiText("StepTitle", root.transform, new Vector2(0.04f, 0.73f), new Vector2(0.96f, 0.85f), 27f, FontStyles.Bold, Color.white, TextAlignmentOptions.Left);
-            var subtitleText = CreateUiText("Subtitle", root.transform, new Vector2(0.04f, 0.34f), new Vector2(0.96f, 0.71f), 22f, FontStyles.Normal, new Color(0.92f, 0.96f, 1f, 1f), TextAlignmentOptions.TopLeft);
+            // Franja de Monitor Cardíaco ECG en vivo (paro cardíaco -> compresiones -> pulso recuperado)
+            var ecgBox = CreateUiBox("EcgMonitorPanel", root.transform, new Vector2(0.04f, 0.71f), new Vector2(0.96f, 0.86f), new Color(0.18f, 0.06f, 0.08f, 0.90f));
+            var ecgBgImg = ecgBox.GetComponent<Image>();
+            ecgBgImg.raycastTarget = false;
+
+            var ecgRawGo = new GameObject("EcgWaveform", typeof(RectTransform), typeof(RawImage));
+            ecgRawGo.transform.SetParent(ecgBox.transform, false);
+            SetAnchors(ecgRawGo.GetComponent<RectTransform>(), new Vector2(0.015f, 0.10f), new Vector2(0.52f, 0.90f));
+            var ecgRaw = ecgRawGo.GetComponent<RawImage>();
+            ecgRaw.raycastTarget = false;
+
+            var ecgStatusLbl = CreateUiText("EcgStatusLabel", ecgBox.transform, new Vector2(0.54f, 0.46f), new Vector2(0.98f, 0.92f), 17f, FontStyles.Bold, new Color(1f, 0.36f, 0.38f, 1f), TextAlignmentOptions.Left);
+            var ecgBpmLbl = CreateUiText("EcgBpmLabel", ecgBox.transform, new Vector2(0.54f, 0.08f), new Vector2(0.98f, 0.48f), 22f, FontStyles.Bold, new Color(1f, 0.38f, 0.38f, 1f), TextAlignmentOptions.Left);
+
+            var ecgMonitor = root.AddComponent<RcpCardiacMonitorUI>();
+            var ecgSo = new SerializedObject(ecgMonitor);
+            ecgSo.FindProperty("ecgRawImage").objectReferenceValue = ecgRaw;
+            ecgSo.FindProperty("ecgStatusLabel").objectReferenceValue = ecgStatusLbl;
+            ecgSo.FindProperty("ecgBpmLabel").objectReferenceValue = ecgBpmLbl;
+            ecgSo.FindProperty("ecgPanelBackground").objectReferenceValue = ecgBgImg;
+            ecgSo.FindProperty("metronome").objectReferenceValue = metronome;
+            ecgSo.FindProperty("compressionMonitor").objectReferenceValue = compressionMonitor;
+            ecgSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var titleText = CreateUiText("StepTitle", root.transform, new Vector2(0.04f, 0.59f), new Vector2(0.96f, 0.69f), 24f, FontStyles.Bold, Color.white, TextAlignmentOptions.Left);
+            var subtitleText = CreateUiText("Subtitle", root.transform, new Vector2(0.04f, 0.32f), new Vector2(0.96f, 0.58f), 19f, FontStyles.Normal, new Color(0.92f, 0.96f, 1f, 1f), TextAlignmentOptions.TopLeft);
 
             // Grupo de elección para paso p3 (sin teclado)
             var choiceGroup = new GameObject("ChoiceGroup", typeof(RectTransform));
             choiceGroup.transform.SetParent(root.transform, false);
-            SetAnchors(choiceGroup.GetComponent<RectTransform>(), new Vector2(0.04f, 0.16f), new Vector2(0.96f, 0.32f));
-            var (btnNormal, lblNormal) = CreateUiButton("BtnRespiraNormal", choiceGroup.transform, new Vector2(0f, 0f), new Vector2(0.485f, 1f), new Color(0.80f, 0.44f, 0.14f, 1f), "1. Respira con normalidad", 20f);
-            var (btnNoRespira, lblNoRespira) = CreateUiButton("BtnNoRespira", choiceGroup.transform, new Vector2(0.515f, 0f), new Vector2(1f, 1f), new Color(0.10f, 0.62f, 0.56f, 1f), "2. No respira / solo jadea", 20f);
+            SetAnchors(choiceGroup.GetComponent<RectTransform>(), new Vector2(0.04f, 0.16f), new Vector2(0.96f, 0.30f));
+            var (btnNormal, lblNormal) = CreateUiButton("BtnRespiraNormal", choiceGroup.transform, new Vector2(0f, 0f), new Vector2(0.485f, 1f), new Color(0.80f, 0.44f, 0.14f, 1f), "1. Respira con normalidad", 18f);
+            var (btnNoRespira, lblNoRespira) = CreateUiButton("BtnNoRespira", choiceGroup.transform, new Vector2(0.515f, 0f), new Vector2(1f, 1f), new Color(0.10f, 0.62f, 0.56f, 1f), "2. No respira / solo jadea", 18f);
             choiceGroup.SetActive(false);
 
             // Grupo de compresiones (p6 - p8)
             var compGroup = new GameObject("CompressionGroup", typeof(RectTransform));
             compGroup.transform.SetParent(root.transform, false);
-            SetAnchors(compGroup.GetComponent<RectTransform>(), new Vector2(0.04f, 0.16f), new Vector2(0.96f, 0.32f));
+            SetAnchors(compGroup.GetComponent<RectTransform>(), new Vector2(0.04f, 0.16f), new Vector2(0.96f, 0.30f));
             var beatRing = CreateUiBox("BeatIndicator", compGroup.transform, new Vector2(0.02f, 0.15f), new Vector2(0.10f, 0.85f), new Color(0.14f, 0.78f, 0.82f, 0.5f)).GetComponent<Image>();
             beatRing.raycastTarget = false;
-            var metronomeLabel = CreateUiText("MetronomeLabel", compGroup.transform, new Vector2(0.13f, 0.10f), new Vector2(0.74f, 0.90f), 22f, FontStyles.Bold, new Color(0.55f, 0.98f, 0.82f, 1f), TextAlignmentOptions.Left);
+            var metronomeLabel = CreateUiText("MetronomeLabel", compGroup.transform, new Vector2(0.13f, 0.10f), new Vector2(0.74f, 0.90f), 20f, FontStyles.Bold, new Color(0.55f, 0.98f, 0.82f, 1f), TextAlignmentOptions.Left);
             metronomeLabel.text = "Ritmo: 110 LPM";
-            var timerText = CreateUiText("TimerText", compGroup.transform, new Vector2(0.75f, 0.10f), new Vector2(0.98f, 0.90f), 28f, FontStyles.Bold, Color.white, TextAlignmentOptions.Right);
+            var timerText = CreateUiText("TimerText", compGroup.transform, new Vector2(0.75f, 0.10f), new Vector2(0.98f, 0.90f), 25f, FontStyles.Bold, Color.white, TextAlignmentOptions.Right);
             compGroup.SetActive(false);
 
             // Barra inferior de controles
-            var (btnLang, lblLang) = CreateUiButton("BtnLang", root.transform, new Vector2(0.04f, 0.03f), new Vector2(0.25f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Idioma: ES", 18f);
-            var (btnRepo, lblRepo) = CreateUiButton("BtnReposition", root.transform, new Vector2(0.27f, 0.03f), new Vector2(0.50f, 0.13f), new Color(0.12f, 0.48f, 0.52f, 1f), "Confirmar aquí", 18f);
-            var (btnSkip, lblSkip) = CreateUiButton("BtnSkip", root.transform, new Vector2(0.52f, 0.03f), new Vector2(0.74f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Saltar voz", 18f);
-            var (btnRestart, lblRestart) = CreateUiButton("BtnRestart", root.transform, new Vector2(0.76f, 0.03f), new Vector2(0.96f, 0.13f), new Color(0.22f, 0.32f, 0.44f, 1f), "Reiniciar", 18f);
+            var (btnLang, lblLang) = CreateUiButton("BtnLang", root.transform, new Vector2(0.04f, 0.03f), new Vector2(0.25f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Idioma: ES", 16f);
+            var (btnRepo, lblRepo) = CreateUiButton("BtnReposition", root.transform, new Vector2(0.27f, 0.03f), new Vector2(0.50f, 0.13f), new Color(0.12f, 0.48f, 0.52f, 1f), "Confirmar aquí", 16f);
+            var (btnSkip, lblSkip) = CreateUiButton("BtnSkip", root.transform, new Vector2(0.52f, 0.03f), new Vector2(0.74f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Saltar voz", 16f);
+            var (btnRestart, lblRestart) = CreateUiButton("BtnRestart", root.transform, new Vector2(0.76f, 0.03f), new Vector2(0.96f, 0.13f), new Color(0.22f, 0.32f, 0.44f, 1f), "Reiniciar", 16f);
 
             var hud = root.AddComponent<RcpExperienceHUD>();
             var so = new SerializedObject(hud);
@@ -878,6 +1010,7 @@ namespace NasaVR.RCP.Editor
             so.FindProperty("skipVoiceLabel").objectReferenceValue = lblSkip;
             so.FindProperty("placementController").objectReferenceValue = placementCtrl;
             so.FindProperty("metronome").objectReferenceValue = metronome;
+            so.FindProperty("cardiacMonitor").objectReferenceValue = ecgMonitor;
             so.ApplyModifiedPropertiesWithoutUndo();
             return hud;
         }

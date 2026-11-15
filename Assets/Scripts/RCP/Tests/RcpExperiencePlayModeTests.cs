@@ -113,17 +113,29 @@ namespace NasaVR.RCP.Tests
             }
             Assert.AreEqual(38, clipsAssigned, "Deben existir los 38 AudioClips ES/EN horneados con ElevenLabs.");
 
+            var guideVisual = Object.FindFirstObjectByType<RcpCompressionGuideVisual>();
+            var ecgMonitor = Object.FindFirstObjectByType<RcpCardiacMonitorUI>();
+            Assert.IsNotNull(guideVisual, "Debe existir RcpCompressionGuideVisual.");
+            Assert.IsNotNull(ecgMonitor, "Debe existir RcpCardiacMonitorUI en el HUD.");
+
             // Inicia secuencia (p1 -> p2 tras saltar voz).
             steps.StartSteps(XRLabs.Core.SimulationMode.Guided);
             yield return null;
             Assert.AreEqual("p1", steps.CurrentStep?.stepId);
+            Assert.IsFalse(guideVisual.IsShowing, "Las manos guía 3D no deben mostrarse antes de compresiones.");
+            Assert.AreEqual(CardiacMonitorMode.CardiacArrest, ecgMonitor.CurrentMode);
 
             vo.Skip();
             yield return WaitForStep(steps, "p2", 2f);
             Assert.AreEqual("p2", steps.CurrentStep?.stepId);
 
-            // Dispara hotspot hombros -> avanza a p3.
-            InvokeTouch("Objeto_hombros");
+            // Solo apuntar (hover) NO debe saltar el paso; requiere Select (Trigger / Pellizco).
+            InvokeHotspotTouch("Objeto_hombros", fromHover: true);
+            yield return null;
+            yield return null;
+            Assert.AreEqual("p2", steps.CurrentStep?.stepId, "Solo apuntar con hover no debe avanzar de paso.");
+
+            InvokeHotspotTouch("Objeto_hombros", fromHover: false);
             yield return WaitForStep(steps, "p3", 2f);
             Assert.AreEqual("p3", steps.CurrentStep?.stepId);
 
@@ -142,21 +154,24 @@ namespace NasaVR.RCP.Tests
             Assert.AreEqual("p4", steps.CurrentStep?.stepId);
             yield return WaitForActivePhase(steps, 2f);
 
-            // Hotspot confirmar (911) -> p5 -> hotspot pecho -> p6 con metrónomo y monitor activos.
-            InvokeTouch("Objeto_confirmar");
+            // Hotspot confirmar (911) -> p5 -> hotspot pecho -> p6 con metrónomo, manos guía 3D, ECG y monitor activos.
+            InvokeHotspotTouch("Objeto_confirmar", fromHover: false);
             yield return WaitForStep(steps, "p5", 2f);
             Assert.AreEqual("p5", steps.CurrentStep?.stepId);
             yield return WaitForActivePhase(steps, 2f);
 
-            InvokeTouch("Objeto_pecho");
+            InvokeHotspotTouch("Objeto_pecho", fromHover: false);
             yield return WaitForStep(steps, "p6", 2f);
             Assert.AreEqual("p6", steps.CurrentStep?.stepId);
+            yield return null;
 
             var metronome = Object.FindFirstObjectByType<RcpMetronome>();
             var monitor = Object.FindFirstObjectByType<RcpCompressionMonitor>();
             Assert.IsNotNull(metronome);
             Assert.IsNotNull(monitor);
             Assert.IsTrue(metronome.IsActive, "El metrónomo de 110 LPM debe activarse al llegar a p6.");
+            Assert.IsTrue(guideVisual.IsShowing, "Las manos guía 3D (CPR-Guide.fbx) deben aparecer al iniciar compresiones.");
+            Assert.AreEqual(CardiacMonitorMode.Compressions, ecgMonitor.CurrentMode);
 
             // Sin manos cerca debe alertar HandsAwayFromChest; con compresiones a ~110 LPM debe validar InPositionGoodRate.
             monitor.ForceDistanceForTests(0.85f);
@@ -170,6 +185,13 @@ namespace NasaVR.RCP.Tests
                 yield return new WaitForSeconds(0.54f);
             }
             Assert.AreEqual(CompressionQualityState.InPositionGoodRate, monitor.CurrentState);
+
+            // Al llegar al paso final (p9), el paciente recupera pulso sinusal verde y se ocultan las manos guía.
+            steps.JumpToStep(steps.TotalSteps - 1);
+            yield return null;
+            Assert.AreEqual("p9", steps.CurrentStep?.stepId);
+            Assert.AreEqual(CardiacMonitorMode.RecoveredPulse, ecgMonitor.CurrentMode);
+            Assert.IsFalse(guideVisual.IsShowing);
         }
 
         private static IEnumerator WaitForStep(StepSystem steps, string expectedId, float timeoutSeconds)
@@ -200,7 +222,7 @@ namespace NasaVR.RCP.Tests
             }
         }
 
-        private static void InvokeTouch(string hotspotObjectName)
+        private static void InvokeHotspotTouch(string hotspotObjectName, bool fromHover)
         {
             var go = GameObject.Find(hotspotObjectName);
             Assert.IsNotNull(go, $"No se encontró el hotspot {hotspotObjectName}.");
@@ -208,7 +230,7 @@ namespace NasaVR.RCP.Tests
             Assert.IsNotNull(hotspot, $"{hotspotObjectName} no tiene TouchableHotspot.");
             var method = typeof(TouchableHotspot).GetMethod("HandleTouch", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(method, "No se encontró TouchableHotspot.HandleTouch.");
-            method.Invoke(hotspot, new object[] { true });
+            method.Invoke(hotspot, new object[] { fromHover });
         }
     }
 }
