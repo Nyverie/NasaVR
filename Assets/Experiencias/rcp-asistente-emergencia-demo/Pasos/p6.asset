@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 77e0364a17f64929b36e30c0980ecef4, type: 3}
+  m_Name: p6
+  m_EditorClassIdentifier: XRLabs.Core::XRLabs.Core.StepDefinition
+  stepType: 1
+  stepId: p6
+  description: 
+  titleText: Comprimir
+  voSequence: []
+  hintVO: {fileID: 0}
+  hintDelay: 10
+  panelType: 0
+  displayImage: {fileID: 0}
+  iconCount: 0
+  sfxOnEnter: {fileID: 0}
+  sfxOnComplete: {fileID: 0}
+  maxAllowedTime: 60
+  waitForManualCompletion: 0
+  scoreOnSuccess: 0
+  penaltyOnError: 0
+  modelDisplay: 0
+  spinSpeed: 30
+  modelPrefab: {fileID: 0}
+  completionCondition: {fileID: 11400000, guid: c0cc753bc7916fa458ab7fa25fe687d3, type: 2}
+  introLines: []
+  instructionLine:
+    id: p6.instr
+  hintLine:
+    id: 
+  successLine:
+    id: 
+  errorLines: []
+  repeatInstructionAfterError: 0
+  defaultErrorLine:
+    id: 
+  countsAsTask: 0
+  taskLabel: 
+  coachAnchorId: paciente
+  pointAtTargetId: pecho
+  activeTargetIds: []
+  guard: []
+  onStartEffects: []
+  onErrorEffects: []
+  advanceDays: 0
+  advanceLabel: 
+  advanceFadeSeconds: 1.5
+  hasContinue: 0
+  continueLabel:
+    id: 
+  continueIncompleteKey: 

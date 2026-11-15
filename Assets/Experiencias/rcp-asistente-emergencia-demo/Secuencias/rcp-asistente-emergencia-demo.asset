@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ac0e5df3a9f642b08f178e6ff11eecc, type: 3}
+  m_Name: rcp-asistente-emergencia-demo
+  m_EditorClassIdentifier: XRLabs.Core::XRLabs.Core.SimulationSequence
+  sequenceName: Asistente de RCP en AR (prototipo)
+  description: "Gu\xEDa en tiempo real, manos libres, para una persona adulta que
+    no responde y no respira con normalidad: comprobar, llamar, comprimir y usar
+    un DEA. Prototipo de demostraci\xF3n; no sustituye al servicio de emergencias
+    ni a un curso de RCP."
+  mode: 0
+  steps:
+  - {fileID: 11400000, guid: 85984008972f05b49836472b2b055308, type: 2}
+  - {fileID: 11400000, guid: b7c37fe1de48f474fb12a3683a996900, type: 2}
+  - {fileID: 11400000, guid: 67802b43a9371e14cbd93ec5e8746146, type: 2}
+  - {fileID: 11400000, guid: 51e016bbf9ea69d4186905b61d1ec13f, type: 2}
+  - {fileID: 11400000, guid: 839e46260557b3c4eb048c3c8926f355, type: 2}
+  - {fileID: 11400000, guid: d7e714873595775478bab85fa29f7040, type: 2}
+  - {fileID: 11400000, guid: d54484c8cb925244b839212d7f5aba0c, type: 2}
+  - {fileID: 11400000, guid: 156553f1bbadef64ab0934c45d14044e, type: 2}
+  - {fileID: 11400000, guid: 414b1a91135bdcc4ea29fc98440b4f02, type: 2}
+  sections:
+  - sectionName: Comprobar y llamar
+    startStepIndex: 0
+  - sectionName: Compresiones
+    startStepIndex: 4
+  - sectionName: Desfibrilador y continuidad
+    startStepIndex: 6
+  initialState: []
+  stepStateEffects: []
+  locks: []
+  indicators: []

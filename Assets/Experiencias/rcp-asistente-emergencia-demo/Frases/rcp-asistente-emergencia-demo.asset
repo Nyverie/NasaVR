@@ -1,0 +1,385 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1692b84ec15ee4995bf4450fa009f73d, type: 3}
+  m_Name: rcp-asistente-emergencia-demo
+  m_EditorClassIdentifier: XRLabs.Core::XRLabs.Core.LineLibrary
+  speakerName: Coach
+  speakerPortrait: {fileID: 0}
+  lines:
+  - id: p1.bienvenida
+    note: firme, calmado y directo; frases cortas
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Mant\xE9n la calma. Te voy a guiar paso a paso."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Stay calm. I will guide you step by step.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p1.seguridad
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: Comprueba que el lugar es seguro para ti y para la persona.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Make sure the area is safe for you and for the person.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p2.instr
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Sacude con suavidad sus hombros y pregunta en voz alta: \xBFme oyes?
+        Toca la marca de los hombros cuando lo hayas hecho."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: 'Gently shake their shoulders and ask out loud: can you hear me? Touch
+        the shoulder marker when you have done it.'
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p2.pista
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Habla fuerte, cerca de su o\xEDdo. Luego toca la marca sobre sus hombros."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Speak loudly, close to their ear. Then touch the marker on their shoulders.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p2.exito
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: Si no responde, pide ayuda en voz alta. Ahora comprobamos si respira.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: If there is no response, call out for help. Now we check if they are
+        breathing.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p3.instr
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Mira su pecho durante no m\xE1s de diez segundos. \xBFRespira con normalidad?
+        Pulsa 1 si respira con normalidad, o 2 si no respira o solo jadea."
+      spokenText: "Mira su pecho durante no m\xE1s de diez segundos. \xBFRespira
+        con normalidad? Pulsa uno si respira con normalidad, o dos si no respira
+        o solo jadea."
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Watch their chest for no more than ten seconds. Are they breathing normally?
+        Press 1 if breathing normally, or 2 if not breathing or only gasping.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p3.pista
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Los jadeos o boqueos no son una respiraci\xF3n normal. Si dudas, act\xFAa
+        como si no respirara."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Gasping is not normal breathing. If you are unsure, act as if they are
+        not breathing.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p3.exito
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Sin respiraci\xF3n normal, hay que actuar ya con compresiones."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Without normal breathing, act now with chest compressions.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p3.err.respira
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Si respira con normalidad, no comprimas. Col\xF3cala de lado, vigila
+        su respiraci\xF3n y llama a emergencias. Si deja de respirar con normalidad,
+        vuelve a comprobar."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: If they are breathing normally, do not compress. Place them on their
+        side, watch their breathing and call emergency services. If they stop breathing
+        normally, check again.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p4.instr
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Llama ahora al n\xFAmero local de emergencias y pon el tel\xE9fono en
+        altavoz. Si hay alguien cerca, p\xEDdele que llame y que traiga un desfibrilador.
+        Toca Hecho cuando la llamada est\xE9 en marcha."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Call your local emergency number now and put the phone on speaker. If
+        someone is nearby, ask them to call and bring a defibrillator. Touch Done
+        when the call is under way.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p4.pista
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "No cuelgues: el operador tambi\xE9n puede guiarte. Cuando la llamada
+        est\xE9 en marcha, toca Hecho."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: 'Do not hang up: the operator can also guide you. When the call is under
+        way, touch Done.'
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p4.exito
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: Bien. Sigue las indicaciones del operador. Empezamos las compresiones.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Good. Follow the operator's instructions. Let's start compressions.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p5.instr
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Col\xF3cala boca arriba. Si est\xE1 en una superficie blanda, no pierdas
+        tiempo movi\xE9ndola. Arrod\xEDllate a su lado y toca el centro de su pecho
+        para fijar el punto."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Place them on their back. If they are on a soft surface, do not waste
+        time moving them. Kneel beside them and touch the center of their chest to
+        set the point.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p5.pista
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "El punto est\xE1 en el centro del pecho, sobre la mitad inferior del
+        estern\xF3n. Toca la marca para fijarlo."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: The point is at the center of the chest, on the lower half of the breastbone.
+        Touch the marker to set it.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p5.exito
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: Punto fijado. A comprimir.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Point set. Start compressions.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p9.cierre
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Lo est\xE1s haciendo bien. No pares. Cuando llegue la ayuda, cu\xE9ntales
+        a qu\xE9 hora empezaste y qu\xE9 hiciste."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: You are doing well. Do not stop. When help arrives, tell them when you
+        started and what you did.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: ui.tarea.respuesta
+    note: 
+    textOnly: 1
+    variants:
+    - language: 0
+      text: Comprobar si responde
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Check responsiveness
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: ui.tarea.respiracion
+    note: 
+    textOnly: 1
+    variants:
+    - language: 0
+      text: "Comprobar la respiraci\xF3n"
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Check breathing
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: ui.tarea.llamar
+    note: 
+    textOnly: 1
+    variants:
+    - language: 0
+      text: Llamar a emergencias
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Call emergency services
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: ui.tarea.punto
+    note: 
+    textOnly: 1
+    variants:
+    - language: 0
+      text: "Fijar el punto de compresi\xF3n"
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Set the compression point
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p6.instr
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Pon el tal\xF3n de una mano en ese punto y la otra mano encima, con
+        los brazos rectos. Empuja fuerte y r\xE1pido, al ritmo del sonido, al menos
+        cinco cent\xEDmetros pero sin pasar de seis, y deja que el pecho suba del
+        todo. No pares."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Place the heel of one hand on that point and the other hand on top, with
+        your arms straight. Push hard and fast, to the beat of the sound, at least
+        five centimeters but no more than six, and let the chest rise fully. Do not
+        stop.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p7.instr
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Si llega un desfibrilador, que otra persona lo encienda y ponga los
+        parches mientras sigues comprimiendo. Cuando analice, nadie debe tocar a
+        la persona. Si indica descarga, avisa: \xA1al\xE9jense! y reanuda las compresiones
+        de inmediato. Si no hay desfibrilador, sigue comprimiendo."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: 'If a defibrillator arrives, have someone else turn it on and place the
+        pads while you keep compressing. While it analyzes, no one should touch the
+        person. If it advises a shock, call out: clear! and resume compressions immediately.
+        If there is no defibrillator, keep compressing.'
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  - id: p8.instr
+    note: 
+    textOnly: 0
+    variants:
+    - language: 0
+      text: "Sigue sin parar. Si hay otra persona, c\xE1mbiense cada dos minutos,
+        con el menor tiempo posible sin comprimir. Contin\xFAa hasta que llegue la
+        ayuda, el desfibrilador indique parar, o la persona se mueva y respire con
+        normalidad."
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+    - language: 1
+      text: Keep going without stopping. If someone else is there, switch every two
+        minutes, with as little time off the chest as possible. Continue until help
+        arrives, the defibrillator tells you to stop, or the person moves and breathes
+        normally.
+      spokenText: 
+      clip: {fileID: 0}
+      bakeHash: 
+  pronunciation: []
