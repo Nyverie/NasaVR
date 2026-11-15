@@ -188,10 +188,51 @@ namespace NasaVR.RCP.Editor
                     bool changed = false;
                     for (int i = prop.arraySize - 1; i >= 0; i--)
                     {
-                        if (prop.GetArrayElementAtIndex(i).objectReferenceValue == null)
+                        var feat = prop.GetArrayElementAtIndex(i).objectReferenceValue;
+                        if (feat == null)
                         {
                             prop.DeleteArrayElementAtIndex(i);
                             changed = true;
+                            continue;
+                        }
+
+                        // Desactiva features de AndroidXR heredados para evitar conflictos en Quest.
+                        if (feat.name.Contains("AndroidXR", StringComparison.OrdinalIgnoreCase) &&
+                            feat is UnityEngine.XR.OpenXR.Features.OpenXRFeature f && f.enabled)
+                        {
+                            f.enabled = false;
+                            EditorUtility.SetDirty(f);
+                            changed = true;
+                        }
+                    }
+
+                    // Habilita Passthrough y manos también en Standalone (Windows Quest Link).
+                    if (oxr.name == "Standalone")
+                    {
+                        string[] linkFeatures =
+                        {
+                            "PassthroughFeature",
+                            "HandTracking",
+                            "MetaHandTrackingAim",
+                            "HandInteractionProfile",
+                            "MetaQuestTouchPlusControllerProfile",
+                            "MetaQuestTouchProControllerProfile",
+                            "OculusTouchControllerProfile",
+                            "MetaXRFeature",
+                            "DisplayUtilitiesFeature",
+                            "OpenXRCompositionLayersFeature",
+                            "FoveatedRenderingFeature"
+                        };
+                        foreach (var f in oxr.GetFeatures())
+                        {
+                            if (f == null) continue;
+                            string typeName = f.GetType().Name;
+                            if (linkFeatures.Contains(typeName) && !f.enabled)
+                            {
+                                f.enabled = true;
+                                EditorUtility.SetDirty(f);
+                                changed = true;
+                            }
                         }
                     }
 
@@ -382,12 +423,24 @@ namespace NasaVR.RCP.Editor
             light.shadows = LightShadows.None;
             lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
-            // [Passthrough] + Foveated Rendering + Meta OVRManager/OVRPassthroughLayer
+            // [Passthrough] + Foveated Rendering + Meta OVRManager/OVRPassthroughLayer preconfigurados
             var ptGo = new GameObject("[Passthrough]");
-            ptGo.AddComponent<RcpPassthroughSetup>();
+            var passthroughSetup = ptGo.AddComponent<RcpPassthroughSetup>();
             ptGo.AddComponent<FoveatedRenderingBootstrap>();
+#if META_XR_SDK
+            var ovrMgr = ptGo.AddComponent<OVRManager>();
+            ovrMgr.isInsightPassthroughEnabled = true;
+            ovrMgr.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
+            ovrMgr.launchSimultaneousHandsControllersOnStartup = true;
+            var ovrPt = ptGo.AddComponent<OVRPassthroughLayer>();
+#pragma warning disable CS0618
+            ovrPt.overlayType = OVROverlay.OverlayType.Underlay;
+#pragma warning restore CS0618
+            ovrPt.textureOpacity = 1f;
+            ovrPt.hidden = false;
+#endif
 
-            // [Platform]: XRLabsRig (XR/Hands/Controllers) + FlatCamera (Editor)
+            // [Platform]: XRLabsRig (XR/Hands/Controllers) + FlatCamera (Editor) + RcpRigCoordinator
             var platformGo = new GameObject("[Platform]");
             var rigPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(RigPrefabPath);
             if (rigPrefab == null) throw new FileNotFoundException("No se encontró XRLabsRig.prefab en " + RigPrefabPath);
@@ -402,11 +455,12 @@ namespace NasaVR.RCP.Editor
                 var urp = cam.GetComponent<UniversalAdditionalCameraData>();
                 if (urp != null) urp.renderPostProcessing = false;
             }
+            rigInstance.AddComponent<RcpHandVisualizer>();
             rigInstance.SetActive(false);
 
             var flatCamGo = new GameObject("FlatCamera");
             flatCamGo.transform.SetParent(platformGo.transform, false);
-            flatCamGo.transform.position = new Vector3(0f, 1.55f, 0f);
+            flatCamGo.transform.position = new Vector3(0f, 1.50f, 0f);
             flatCamGo.tag = "MainCamera";
             var flatCam = flatCamGo.AddComponent<Camera>();
             flatCam.clearFlags = CameraClearFlags.SolidColor;
@@ -418,11 +472,7 @@ namespace NasaVR.RCP.Editor
             flatCamGo.AddComponent<OrbitCameraController>();
             flatCamGo.SetActive(false);
 
-            var bootstrapper = platformGo.AddComponent<PlatformBootstrapper>();
-            var bootSo = new SerializedObject(bootstrapper);
-            bootSo.FindProperty("xrRigRoot").objectReferenceValue = rigInstance;
-            bootSo.FindProperty("flatRigRoot").objectReferenceValue = flatCamGo;
-            bootSo.ApplyModifiedPropertiesWithoutUndo();
+            var rigCoordinator = platformGo.AddComponent<RcpRigCoordinator>();
 
             // [Simulation]: StepSystem, SimulationManager, VOManager, HintSystem, StepGuidance, Metrónomo
             var simGo = new GameObject("[Simulation]");
@@ -435,6 +485,7 @@ namespace NasaVR.RCP.Editor
             simGo.AddComponent<FeedbackSystem>();
             var guidance = simGo.AddComponent<StepGuidance>();
             var metronome = simGo.AddComponent<RcpMetronome>();
+            var compressionMonitor = simGo.AddComponent<RcpCompressionMonitor>();
 
             var stepSo = new SerializedObject(stepSystem);
             stepSo.FindProperty("sequence").objectReferenceValue = seq;
@@ -457,7 +508,25 @@ namespace NasaVR.RCP.Editor
             guidSo.FindProperty("stepSystem").objectReferenceValue = stepSystem;
             guidSo.ApplyModifiedPropertiesWithoutUndo();
 
-            // [Coach]: HologramCoach + CoachDirector
+            // [Colocacion]: Silueta en piso + Reticle Paso 0 + Hotspots + Ancla Coach + HUD pegado al paciente
+            var colocacionGo = new GameObject("[Colocacion]");
+            colocacionGo.transform.position = new Vector3(0f, 0.42f, 0.68f);
+            var placementCtrl = colocacionGo.AddComponent<RcpPlacementController>();
+            var patientLocator = colocacionGo.AddComponent<RcpPatientLocator>();
+
+            var inicioGo = new GameObject("Inicio");
+            inicioGo.transform.SetParent(colocacionGo.transform, false);
+            var inicioTarget = inicioGo.AddComponent<SceneTarget>();
+            SetSerializedField(inicioTarget, "targetId", "inicio");
+
+            var anchorGo = new GameObject("Ancla_paciente");
+            anchorGo.transform.SetParent(colocacionGo.transform, false);
+            anchorGo.transform.localPosition = new Vector3(-0.56f, -0.08f, 0.14f);
+            var anchor = anchorGo.AddComponent<CoachAnchor>();
+            SetSerializedField(anchor, "anchorId", "paciente");
+            SetSerializedField(anchor, "faceUser", true);
+
+            // [Coach]: HologramCoach a nivel de piso junto al paciente (discHeight 0.85m) y retrato de enfermera
             var coachRoot = new GameObject("[Coach]");
             var coachPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CoachPrefabPath);
             if (coachPrefab != null)
@@ -465,7 +534,25 @@ namespace NasaVR.RCP.Editor
                 var coachInst = (GameObject)PrefabUtility.InstantiatePrefab(coachPrefab, scene);
                 coachInst.name = "Coach";
                 coachInst.transform.SetParent(coachRoot.transform, false);
-                coachInst.transform.position = new Vector3(-0.7f, 0.85f, 1.0f);
+                coachInst.transform.position = new Vector3(-0.56f, 0.34f, 0.82f);
+
+                var holo = coachInst.GetComponent<HologramCoach>();
+                if (holo != null)
+                {
+                    const string portraitPath = "Assets/Textures/CoachEnfermera.jpg";
+                    AssetDatabase.ImportAsset(portraitPath, ImportAssetOptions.ForceUpdate);
+                    var portraitTex = AssetDatabase.LoadAssetAtPath<Texture2D>(portraitPath);
+                    var holoSo = new SerializedObject(holo);
+                    if (portraitTex != null)
+                    {
+                        holoSo.FindProperty("portraitTexture").objectReferenceValue = portraitTex;
+                    }
+                    holoSo.FindProperty("discHeight").floatValue = 0.85f;
+                    holoSo.FindProperty("discRadius").floatValue = 0.17f;
+                    holoSo.FindProperty("speakerName").stringValue = "Enfermera Clara";
+                    holoSo.FindProperty("roleLabel").stringValue = "Asistente RCP";
+                    holoSo.ApplyModifiedPropertiesWithoutUndo();
+                }
 
                 var presence = coachInst.GetComponent<CoachPresence>();
                 var director = coachRoot.AddComponent<CoachDirector>();
@@ -475,54 +562,67 @@ namespace NasaVR.RCP.Editor
                 dirSo.ApplyModifiedPropertiesWithoutUndo();
             }
 
-            // [Colocacion]: Hotspots anatómicos y ancla de paciente frente al usuario
-            var colocacionGo = new GameObject("[Colocacion]");
-            var placementCtrl = colocacionGo.AddComponent<RcpPlacementController>();
-
-            var inicioGo = new GameObject("Inicio");
-            inicioGo.transform.SetParent(colocacionGo.transform, false);
-            var inicioTarget = inicioGo.AddComponent<SceneTarget>();
-            SetSerializedField(inicioTarget, "targetId", "inicio");
-
-            var anchorGo = new GameObject("Ancla_paciente");
-            anchorGo.transform.SetParent(colocacionGo.transform, false);
-            anchorGo.transform.localPosition = new Vector3(-0.65f, 0.85f, 1.05f);
-            var anchor = anchorGo.AddComponent<CoachAnchor>();
-            SetSerializedField(anchor, "anchorId", "paciente");
-            SetSerializedField(anchor, "faceUser", true);
+            // Silueta corporal en piso y reticle Paso 0 (sin colliders)
+            var floorReticle = CreatePatientSilhouetteAndReticle(colocacionGo.transform);
 
             CreateHotspot(
                 colocacionGo.transform,
                 "Objeto_hombros",
                 "hombros",
                 "Hombros\n(Tocar)",
-                new Vector3(0.24f, 0.85f, 1.05f),
+                new Vector3(0.20f, 0.06f, 0.12f),
                 PrimitiveType.Sphere,
-                new Vector3(0.15f, 0.15f, 0.15f),
-                new Color(0.12f, 0.72f, 0.95f, 0.85f));
+                new Vector3(0.13f, 0.13f, 0.13f),
+                new Color(0.12f, 0.72f, 0.95f, 0.92f));
 
-            CreateHotspot(
+            var chestHotspot = CreateHotspot(
                 colocacionGo.transform,
                 "Objeto_pecho",
                 "pecho",
                 "Centro del pecho\n(Compresiones)",
-                new Vector3(0f, 0.80f, 0.90f),
+                new Vector3(0f, 0.02f, 0f),
                 PrimitiveType.Cylinder,
-                new Vector3(0.16f, 0.025f, 0.16f),
-                new Color(0.15f, 0.88f, 0.72f, 0.90f));
+                new Vector3(0.16f, 0.024f, 0.16f),
+                new Color(0.15f, 0.88f, 0.72f, 0.94f));
 
-            CreateHotspot(
+            CreateCall911Hotspot(
                 colocacionGo.transform,
-                "Objeto_confirmar",
-                "confirmar",
-                "Hecho\n(Llamada 911)",
-                new Vector3(-0.36f, 1.15f, 0.85f),
-                PrimitiveType.Cube,
-                new Vector3(0.22f, 0.10f, 0.04f),
-                new Color(0.20f, 0.82f, 0.45f, 0.95f));
+                new Vector3(-0.34f, 0.18f, 0.12f));
 
-            // [RCP_HUD]: Panel espacial AR con subtítulos, elección p3 sin teclado y metrónomo visual
-            CreateHud(scene, placementCtrl, metronome);
+            // [RCP_HUD]: Panel compacto pegado directamente sobre [Colocacion]
+            var hud = CreateHud(scene, colocacionGo.transform, placementCtrl, metronome);
+            var hudSo = new SerializedObject(hud);
+            hudSo.FindProperty("patientLocator").objectReferenceValue = patientLocator;
+            hudSo.FindProperty("compressionMonitor").objectReferenceValue = compressionMonitor;
+            hudSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var compSo = new SerializedObject(compressionMonitor);
+            compSo.FindProperty("chestTarget").objectReferenceValue = chestHotspot.transform;
+            compSo.FindProperty("rigRoot").objectReferenceValue = rigInstance.transform;
+            compSo.FindProperty("metronome").objectReferenceValue = metronome;
+            compSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var placeSo = new SerializedObject(placementCtrl);
+            placeSo.FindProperty("coachTransform").objectReferenceValue = coachRoot.transform;
+            placeSo.FindProperty("experienceHud").objectReferenceValue = hud;
+            placeSo.FindProperty("compressionMonitor").objectReferenceValue = compressionMonitor;
+            placeSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var locSo = new SerializedObject(patientLocator);
+            locSo.FindProperty("placementController").objectReferenceValue = placementCtrl;
+            locSo.FindProperty("experienceHud").objectReferenceValue = hud;
+            locSo.FindProperty("stepSystem").objectReferenceValue = stepSystem;
+            locSo.FindProperty("floorReticle").objectReferenceValue = floorReticle;
+            locSo.ApplyModifiedPropertiesWithoutUndo();
+
+            var coordSo = new SerializedObject(rigCoordinator);
+            coordSo.FindProperty("xrRigRoot").objectReferenceValue = rigInstance;
+            coordSo.FindProperty("flatRigRoot").objectReferenceValue = flatCamGo;
+            coordSo.FindProperty("passthroughSetup").objectReferenceValue = passthroughSetup;
+            coordSo.FindProperty("placementController").objectReferenceValue = placementCtrl;
+            coordSo.FindProperty("experienceHud").objectReferenceValue = hud;
+            coordSo.FindProperty("coachRoot").objectReferenceValue = coachRoot.transform;
+            coordSo.ApplyModifiedPropertiesWithoutUndo();
 
             // EventSystem con XRUIInputModule (soporta Hands/Controllers XR y Mouse en Editor)
             var esGo = new GameObject("EventSystem");
@@ -537,7 +637,101 @@ namespace NasaVR.RCP.Editor
             Debug.Log("[NasaVR RCP] Escena guardada y puesta en BuildSettings[0]: " + ScenePath);
         }
 
-        private static void CreateHotspot(Transform parent, string goName, string id, string labelText,
+        private static Transform CreatePatientSilhouetteAndReticle(Transform parent)
+        {
+            var bodyRoot = new GameObject("SiluetaPaciente");
+            bodyRoot.transform.SetParent(parent, false);
+
+            var bodyMat = CreateUrpLitMaterial(new Color(0.08f, 0.36f, 0.54f, 0.85f));
+            var accentMat = CreateUrpLitMaterial(new Color(0.16f, 0.86f, 0.78f, 0.95f));
+
+            void AddPart(string name, PrimitiveType shape, Vector3 localPos, Vector3 scale, Material mat, Transform p = null)
+            {
+                var part = GameObject.CreatePrimitive(shape);
+                part.name = name;
+                part.transform.SetParent(p ?? bodyRoot.transform, false);
+                part.transform.localPosition = localPos;
+                part.transform.localScale = scale;
+                var col = part.GetComponent<Collider>();
+                if (col != null) UnityEngine.Object.DestroyImmediate(col);
+                part.GetComponent<Renderer>().sharedMaterial = mat;
+            }
+
+            // Torso y cabeza supinos para alinear exactamente sobre la persona real
+            AddPart("TorsoBase", PrimitiveType.Cube, new Vector3(0f, -0.055f, 0.02f), new Vector3(0.42f, 0.03f, 0.46f), bodyMat);
+            AddPart("CabezaGuia", PrimitiveType.Cylinder, new Vector3(0f, -0.05f, 0.34f), new Vector3(0.18f, 0.02f, 0.21f), bodyMat);
+
+            // Reticle luminoso en piso visible durante Paso 0 ("Ubicar paciente")
+            var reticle = new GameObject("ReticlePiso");
+            reticle.transform.SetParent(parent, false);
+            reticle.transform.localPosition = new Vector3(0f, -0.065f, 0.02f);
+            AddPart("AnilloExterior", PrimitiveType.Cylinder, Vector3.zero, new Vector3(0.85f, 0.008f, 0.85f), accentMat, reticle.transform);
+            AddPart("CentroPecho", PrimitiveType.Cylinder, new Vector3(0f, 0.006f, 0f), new Vector3(0.24f, 0.01f, 0.24f), CreateUrpLitMaterial(new Color(0.20f, 1f, 0.70f, 1f)), reticle.transform);
+
+            return reticle.transform;
+        }
+
+        private static GameObject CreateCall911Hotspot(Transform parent, Vector3 localPos)
+        {
+            var go = new GameObject("Objeto_confirmar");
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = localPos;
+
+            var darkMat = CreateUrpLitMaterial(new Color(0.10f, 0.14f, 0.20f, 1f));
+            var sosMat = CreateUrpLitMaterial(new Color(0.88f, 0.18f, 0.18f, 1f));
+            var whiteMat = CreateUrpLitMaterial(Color.white);
+
+            void AddVisual(string name, PrimitiveType type, Vector3 pos, Vector3 rot, Vector3 scale, Material mat)
+            {
+                var p = GameObject.CreatePrimitive(type);
+                p.name = name;
+                p.transform.SetParent(go.transform, false);
+                p.transform.localPosition = pos;
+                p.transform.localEulerAngles = rot;
+                p.transform.localScale = scale;
+                var c = p.GetComponent<Collider>();
+                if (c != null) UnityEngine.Object.DestroyImmediate(c);
+                p.GetComponent<Renderer>().sharedMaterial = mat;
+            }
+
+            // Consola tipo teléfono/botón SOS 911 en 3D
+            AddVisual("BaseConsola", PrimitiveType.Cube, new Vector3(0f, -0.02f, 0f), new Vector3(-18f, 0f, 0f), new Vector3(0.20f, 0.13f, 0.03f), darkMat);
+            AddVisual("BotonSOS", PrimitiveType.Cube, new Vector3(0f, -0.02f, -0.014f), new Vector3(-18f, 0f, 0f), new Vector3(0.17f, 0.10f, 0.018f), sosMat);
+            // Auricular estilizado 3D en blanco sobre el botón rojo
+            AddVisual("TelefonoBarra", PrimitiveType.Cube, new Vector3(0f, -0.01f, -0.026f), new Vector3(-18f, 0f, 30f), new Vector3(0.085f, 0.020f, 0.014f), whiteMat);
+            AddVisual("TelefonoAuricularA", PrimitiveType.Sphere, new Vector3(-0.032f, -0.028f, -0.026f), Vector3.zero, new Vector3(0.026f, 0.026f, 0.018f), whiteMat);
+            AddVisual("TelefonoAuricularB", PrimitiveType.Sphere, new Vector3(0.032f, 0.008f, -0.026f), Vector3.zero, new Vector3(0.026f, 0.026f, 0.018f), whiteMat);
+            AddVisual("BalizaSOS", PrimitiveType.Cylinder, new Vector3(0f, 0.055f, 0f), Vector3.zero, new Vector3(0.05f, 0.018f, 0.05f), sosMat);
+
+            var col = go.AddComponent<SphereCollider>();
+            col.radius = 0.13f;
+
+            go.AddComponent<XRSimpleInteractable>();
+            var hotspot = go.AddComponent<TouchableHotspot>();
+            SetSerializedField(hotspot, "interactionId", "confirmar");
+            SetSerializedField(hotspot, "triggerOnTouch", true);
+            SetSerializedField(hotspot, "oneShot", true);
+
+            var target = go.AddComponent<SceneTarget>();
+            SetSerializedField(target, "targetId", "confirmar");
+
+            var labelGo = new GameObject("Etiqueta");
+            labelGo.transform.SetParent(go.transform, false);
+            labelGo.transform.localPosition = new Vector3(0f, 0.14f, 0f);
+            var fc = labelGo.AddComponent<FaceCamera>();
+            SetSerializedField(fc, "backToCamera", true);
+
+            var tmp = labelGo.AddComponent<TextMeshPro>();
+            tmp.text = "911 • LLAMAR\n(Tocar al terminar)";
+            tmp.fontSize = 1.15f;
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.color = Color.white;
+            tmp.rectTransform.sizeDelta = new Vector2(1.2f, 0.4f);
+
+            return go;
+        }
+
+        private static GameObject CreateHotspot(Transform parent, string goName, string id, string labelText,
             Vector3 localPos, PrimitiveType shape, Vector3 scale, Color color)
         {
             var go = new GameObject(goName);
@@ -570,16 +764,18 @@ namespace NasaVR.RCP.Editor
             // Etiqueta flotante orientada al usuario
             var labelGo = new GameObject("Etiqueta");
             labelGo.transform.SetParent(go.transform, false);
-            labelGo.transform.localPosition = new Vector3(0f, 0.16f, 0f);
+            labelGo.transform.localPosition = new Vector3(0f, 0.14f, 0f);
             var fc = labelGo.AddComponent<FaceCamera>();
             SetSerializedField(fc, "backToCamera", true);
 
             var tmp = labelGo.AddComponent<TextMeshPro>();
             tmp.text = labelText;
-            tmp.fontSize = 1.4f;
+            tmp.fontSize = 1.10f;
             tmp.alignment = TextAlignmentOptions.Center;
             tmp.color = Color.white;
             tmp.rectTransform.sizeDelta = new Vector2(1.2f, 0.4f);
+
+            return go;
         }
 
         private static Material CreateUrpLitMaterial(Color color)
@@ -596,17 +792,23 @@ namespace NasaVR.RCP.Editor
             return mat;
         }
 
-        private static void CreateHud(Scene scene, RcpPlacementController placementCtrl, RcpMetronome metronome)
+        private static RcpExperienceHUD CreateHud(Scene scene, Transform patientAnchorParent,
+            RcpPlacementController placementCtrl, RcpMetronome metronome)
         {
             var root = new GameObject("[RCP_HUD]");
             SceneManager.MoveGameObjectToScene(root, scene);
+            if (patientAnchorParent != null)
+            {
+                root.transform.SetParent(patientAnchorParent, false);
+            }
 
             var canvas = root.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             var rt = root.GetComponent<RectTransform>();
             rt.sizeDelta = new Vector2(1150f, 680f);
-            rt.localScale = Vector3.one * 0.00085f;
-            rt.position = new Vector3(0f, 1.45f, 1.25f);
+            rt.localScale = Vector3.one * 0.00046f;
+            rt.localPosition = new Vector3(0f, 0.44f, 0.34f);
+            rt.localRotation = Quaternion.Euler(22f, 0f, 0f);
 
             root.AddComponent<CanvasScaler>().dynamicPixelsPerUnit = 10f;
             root.AddComponent<GraphicRaycaster>();
@@ -619,18 +821,18 @@ namespace NasaVR.RCP.Editor
             var accent = CreateUiBox("AccentBar", root.transform, new Vector2(0f, 0f), new Vector2(0.014f, 1f), new Color(0.14f, 0.78f, 0.82f, 1f)).GetComponent<Image>();
             accent.raycastTarget = false;
 
-            var headerText = CreateUiText("Header", root.transform, new Vector2(0.04f, 0.86f), new Vector2(0.68f, 0.96f), 26f, FontStyles.Bold, new Color(0.55f, 0.90f, 0.96f, 1f), TextAlignmentOptions.Left);
-            var badgeText = CreateUiText("StatusBadge", root.transform, new Vector2(0.68f, 0.86f), new Vector2(0.96f, 0.96f), 24f, FontStyles.Bold, new Color(0.95f, 0.88f, 0.45f, 1f), TextAlignmentOptions.Right);
+            var headerText = CreateUiText("Header", root.transform, new Vector2(0.04f, 0.86f), new Vector2(0.68f, 0.96f), 19f, FontStyles.Bold, new Color(0.55f, 0.90f, 0.96f, 1f), TextAlignmentOptions.Left);
+            var badgeText = CreateUiText("StatusBadge", root.transform, new Vector2(0.68f, 0.86f), new Vector2(0.96f, 0.96f), 18f, FontStyles.Bold, new Color(0.95f, 0.88f, 0.45f, 1f), TextAlignmentOptions.Right);
 
-            var titleText = CreateUiText("StepTitle", root.transform, new Vector2(0.04f, 0.73f), new Vector2(0.96f, 0.85f), 40f, FontStyles.Bold, Color.white, TextAlignmentOptions.Left);
-            var subtitleText = CreateUiText("Subtitle", root.transform, new Vector2(0.04f, 0.34f), new Vector2(0.96f, 0.71f), 32f, FontStyles.Normal, new Color(0.92f, 0.96f, 1f, 1f), TextAlignmentOptions.TopLeft);
+            var titleText = CreateUiText("StepTitle", root.transform, new Vector2(0.04f, 0.73f), new Vector2(0.96f, 0.85f), 27f, FontStyles.Bold, Color.white, TextAlignmentOptions.Left);
+            var subtitleText = CreateUiText("Subtitle", root.transform, new Vector2(0.04f, 0.34f), new Vector2(0.96f, 0.71f), 22f, FontStyles.Normal, new Color(0.92f, 0.96f, 1f, 1f), TextAlignmentOptions.TopLeft);
 
             // Grupo de elección para paso p3 (sin teclado)
             var choiceGroup = new GameObject("ChoiceGroup", typeof(RectTransform));
             choiceGroup.transform.SetParent(root.transform, false);
             SetAnchors(choiceGroup.GetComponent<RectTransform>(), new Vector2(0.04f, 0.16f), new Vector2(0.96f, 0.32f));
-            var (btnNormal, lblNormal) = CreateUiButton("BtnRespiraNormal", choiceGroup.transform, new Vector2(0f, 0f), new Vector2(0.485f, 1f), new Color(0.80f, 0.44f, 0.14f, 1f), "1. Respira con normalidad", 26f);
-            var (btnNoRespira, lblNoRespira) = CreateUiButton("BtnNoRespira", choiceGroup.transform, new Vector2(0.515f, 0f), new Vector2(1f, 1f), new Color(0.10f, 0.62f, 0.56f, 1f), "2. No respira / solo jadea", 26f);
+            var (btnNormal, lblNormal) = CreateUiButton("BtnRespiraNormal", choiceGroup.transform, new Vector2(0f, 0f), new Vector2(0.485f, 1f), new Color(0.80f, 0.44f, 0.14f, 1f), "1. Respira con normalidad", 20f);
+            var (btnNoRespira, lblNoRespira) = CreateUiButton("BtnNoRespira", choiceGroup.transform, new Vector2(0.515f, 0f), new Vector2(1f, 1f), new Color(0.10f, 0.62f, 0.56f, 1f), "2. No respira / solo jadea", 20f);
             choiceGroup.SetActive(false);
 
             // Grupo de compresiones (p6 - p8)
@@ -639,16 +841,16 @@ namespace NasaVR.RCP.Editor
             SetAnchors(compGroup.GetComponent<RectTransform>(), new Vector2(0.04f, 0.16f), new Vector2(0.96f, 0.32f));
             var beatRing = CreateUiBox("BeatIndicator", compGroup.transform, new Vector2(0.02f, 0.15f), new Vector2(0.10f, 0.85f), new Color(0.14f, 0.78f, 0.82f, 0.5f)).GetComponent<Image>();
             beatRing.raycastTarget = false;
-            var metronomeLabel = CreateUiText("MetronomeLabel", compGroup.transform, new Vector2(0.13f, 0.10f), new Vector2(0.68f, 0.90f), 32f, FontStyles.Bold, new Color(0.55f, 0.98f, 0.82f, 1f), TextAlignmentOptions.Left);
+            var metronomeLabel = CreateUiText("MetronomeLabel", compGroup.transform, new Vector2(0.13f, 0.10f), new Vector2(0.74f, 0.90f), 22f, FontStyles.Bold, new Color(0.55f, 0.98f, 0.82f, 1f), TextAlignmentOptions.Left);
             metronomeLabel.text = "Ritmo: 110 LPM";
-            var timerText = CreateUiText("TimerText", compGroup.transform, new Vector2(0.70f, 0.10f), new Vector2(0.98f, 0.90f), 42f, FontStyles.Bold, Color.white, TextAlignmentOptions.Right);
+            var timerText = CreateUiText("TimerText", compGroup.transform, new Vector2(0.75f, 0.10f), new Vector2(0.98f, 0.90f), 28f, FontStyles.Bold, Color.white, TextAlignmentOptions.Right);
             compGroup.SetActive(false);
 
             // Barra inferior de controles
-            var (btnLang, lblLang) = CreateUiButton("BtnLang", root.transform, new Vector2(0.04f, 0.03f), new Vector2(0.25f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Idioma: ES", 22f);
-            var (btnRepo, lblRepo) = CreateUiButton("BtnReposition", root.transform, new Vector2(0.27f, 0.03f), new Vector2(0.50f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Recolocar", 22f);
-            var (btnSkip, lblSkip) = CreateUiButton("BtnSkip", root.transform, new Vector2(0.52f, 0.03f), new Vector2(0.74f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Saltar voz", 22f);
-            var (btnRestart, lblRestart) = CreateUiButton("BtnRestart", root.transform, new Vector2(0.76f, 0.03f), new Vector2(0.96f, 0.13f), new Color(0.22f, 0.32f, 0.44f, 1f), "Reiniciar", 22f);
+            var (btnLang, lblLang) = CreateUiButton("BtnLang", root.transform, new Vector2(0.04f, 0.03f), new Vector2(0.25f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Idioma: ES", 18f);
+            var (btnRepo, lblRepo) = CreateUiButton("BtnReposition", root.transform, new Vector2(0.27f, 0.03f), new Vector2(0.50f, 0.13f), new Color(0.12f, 0.48f, 0.52f, 1f), "Confirmar aquí", 18f);
+            var (btnSkip, lblSkip) = CreateUiButton("BtnSkip", root.transform, new Vector2(0.52f, 0.03f), new Vector2(0.74f, 0.13f), new Color(0.18f, 0.25f, 0.34f, 1f), "Saltar voz", 18f);
+            var (btnRestart, lblRestart) = CreateUiButton("BtnRestart", root.transform, new Vector2(0.76f, 0.03f), new Vector2(0.96f, 0.13f), new Color(0.22f, 0.32f, 0.44f, 1f), "Reiniciar", 18f);
 
             var hud = root.AddComponent<RcpExperienceHUD>();
             var so = new SerializedObject(hud);
@@ -677,6 +879,7 @@ namespace NasaVR.RCP.Editor
             so.FindProperty("placementController").objectReferenceValue = placementCtrl;
             so.FindProperty("metronome").objectReferenceValue = metronome;
             so.ApplyModifiedPropertiesWithoutUndo();
+            return hud;
         }
 
         // ── 4. URP + Quest + Meta ProjectConfig ──────────────────────────────

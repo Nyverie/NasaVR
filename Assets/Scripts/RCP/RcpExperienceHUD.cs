@@ -40,19 +40,23 @@ namespace NasaVR.RCP
         [SerializeField] private Button skipVoiceButton;
         [SerializeField] private TMP_Text skipVoiceLabel;
 
-        [Header("Seguimiento suave en AR")]
-        [SerializeField] private float followDistance = 1.25f;
-        [SerializeField] private float followHeightOffset = -0.05f;
+        [Header("Ubicación en AR")]
+        [SerializeField] private float followDistance = 1.05f;
+        [SerializeField] private float followHeightOffset = -0.04f;
+        [SerializeField] private bool continuousHeadFollow = false;
         [SerializeField] private float followLerpSpeed = 3.5f;
 
         [Header("Dependencias")]
         [SerializeField] private RcpPlacementController placementController;
         [SerializeField] private RcpMetronome metronome;
+        [SerializeField] private RcpPatientLocator patientLocator;
+        [SerializeField] private RcpCompressionMonitor compressionMonitor;
 
         private StepSystem _steps;
         private StepDefinition _currentStep;
         private float _stepStartTime;
         private bool _isErrorSubtitle;
+        private bool _isPlacingPatient;
         private float _errorClearAt;
 
         private static readonly Dictionary<string, float> TimedStepSeconds = new()
@@ -76,6 +80,8 @@ namespace NasaVR.RCP
         {
             if (placementController == null) placementController = FindFirstObjectByType<RcpPlacementController>();
             if (metronome == null) metronome = FindFirstObjectByType<RcpMetronome>();
+            if (patientLocator == null) patientLocator = FindFirstObjectByType<RcpPatientLocator>();
+            if (compressionMonitor == null) compressionMonitor = FindFirstObjectByType<RcpCompressionMonitor>();
 
             if (SimulationManager.Instance != null && SimulationManager.Instance.Steps != null)
             {
@@ -113,7 +119,10 @@ namespace NasaVR.RCP
 
         private void Update()
         {
-            UpdateHeadFollow();
+            if (continuousHeadFollow)
+            {
+                UpdateHeadFollow();
+            }
             UpdateCompressionVisuals();
             UpdateKeyboardShortcuts();
 
@@ -158,7 +167,7 @@ namespace NasaVR.RCP
                 languageButton.onClick.AddListener(ToggleLanguage);
 
             if (repositionButton != null)
-                repositionButton.onClick.AddListener(() => placementController?.PlaceInFrontOfUser());
+                repositionButton.onClick.AddListener(OnRepositionOrConfirmClicked);
 
             if (restartButton != null)
                 restartButton.onClick.AddListener(RestartExperience);
@@ -279,10 +288,56 @@ namespace NasaVR.RCP
             LanguageService.Set(next);
         }
 
+        public void SetPlacementModeState(bool placing)
+        {
+            _isPlacingPatient = placing;
+            if (!placing)
+            {
+                RefreshLocalizedLabels();
+                return;
+            }
+
+            if (choiceGroup != null) choiceGroup.SetActive(false);
+            if (compressionGroup != null) compressionGroup.SetActive(false);
+            if (accentBar != null) accentBar.color = NormalAccent;
+
+            bool es = LanguageService.Current == CoachLanguage.Spanish;
+            if (headerText != null)
+                headerText.text = es ? "PASO 0  •  UBICAR PACIENTE" : "STEP 0  •  LOCATE PATIENT";
+            if (stepTitleText != null)
+                stepTitleText.text = es ? "Alinea al paciente en el piso" : "Align patient on the floor";
+            if (subtitleText != null)
+                subtitleText.text = es
+                    ? "Apunta hacia el pecho de la persona en el piso y toca CONFIRMAR AQUÍ (o presiona Trigger / Espacio)."
+                    : "Aim at the person's chest on the floor and tap CONFIRM HERE (or press Trigger / Space).";
+            if (statusBadgeText != null)
+                statusBadgeText.text = es ? "Esperando ubicación" : "Waiting placement";
+
+            RefreshLocalizedLabels();
+        }
+
+        private void OnRepositionOrConfirmClicked()
+        {
+            if (patientLocator == null) patientLocator = FindFirstObjectByType<RcpPatientLocator>();
+            if (patientLocator != null)
+            {
+                if (_isPlacingPatient || patientLocator.IsPlacingPatient)
+                    patientLocator.ConfirmPlacement();
+                else
+                    patientLocator.BeginPlacement();
+                return;
+            }
+            placementController?.PlaceInFrontOfUser();
+        }
+
         private void RestartExperience()
         {
             if (_steps == null) return;
             VOManager.Instance?.StopAll();
+            foreach (var hotspot in FindObjectsByType<XRLabs.Interactions.TouchableHotspot>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                hotspot?.ResetHotspot();
+            }
             _steps.StartSteps(XRLabs.Core.SimulationMode.Guided);
         }
 
@@ -309,7 +364,12 @@ namespace NasaVR.RCP
                 languageButtonLabel.text = es ? "Idioma: ES" : "Lang: EN";
 
             if (repositionButtonLabel != null)
-                repositionButtonLabel.text = es ? "Recolocar" : "Reposition";
+            {
+                if (_isPlacingPatient)
+                    repositionButtonLabel.text = es ? "Confirmar aquí" : "Confirm here";
+                else
+                    repositionButtonLabel.text = es ? "Reubicar" : "Relocate";
+            }
 
             if (restartButtonLabel != null)
                 restartButtonLabel.text = es ? "Reiniciar" : "Restart";
@@ -336,6 +396,45 @@ namespace NasaVR.RCP
                 float pulse = metronome.BeatPulse;
                 beatRingImage.color = Color.Lerp(BeatIdleColor, BeatPeakColor, pulse);
                 beatRingImage.transform.localScale = Vector3.one * (1f + pulse * 0.25f);
+            }
+
+            if (compressionMonitor != null && metronomeLabel != null)
+            {
+                bool es = LanguageService.Current == CoachLanguage.Spanish;
+                int bpm = Mathf.RoundToInt(compressionMonitor.MeasuredBpm);
+                switch (compressionMonitor.CurrentState)
+                {
+                    case CompressionQualityState.HandsAwayFromChest:
+                        metronomeLabel.text = es
+                            ? "¡Manos sobre el pecho! (110 LPM)"
+                            : "Hands on chest! (110 BPM)";
+                        if (accentBar != null) accentBar.color = AlertAccent;
+                        break;
+                    case CompressionQualityState.HandsIdleOnChest:
+                        metronomeLabel.text = es
+                            ? "¡Presiona al ritmo! (110 LPM)"
+                            : "Push to the beat! (110 BPM)";
+                        if (accentBar != null) accentBar.color = AlertAccent;
+                        break;
+                    case CompressionQualityState.TooSlow:
+                        metronomeLabel.text = es
+                            ? $"Más rápido ▲ ({bpm} LPM)"
+                            : $"Push faster ▲ ({bpm} BPM)";
+                        if (accentBar != null) accentBar.color = AlertAccent;
+                        break;
+                    case CompressionQualityState.TooFast:
+                        metronomeLabel.text = es
+                            ? $"Más lento ▼ ({bpm} LPM)"
+                            : $"Push slower ▼ ({bpm} BPM)";
+                        if (accentBar != null) accentBar.color = AlertAccent;
+                        break;
+                    case CompressionQualityState.InPositionGoodRate:
+                        metronomeLabel.text = bpm > 0
+                            ? (es ? $"¡Buen ritmo! {bpm} LPM" : $"Good rate! {bpm} BPM")
+                            : (es ? "Ritmo: 110 LPM" : "Rate: 110 BPM");
+                        if (accentBar != null && !_isErrorSubtitle) accentBar.color = BeatPeakColor;
+                        break;
+                }
             }
         }
 
@@ -367,8 +466,16 @@ namespace NasaVR.RCP
             transform.rotation = Quaternion.Slerp(transform.rotation, desiredRot, Time.deltaTime * followLerpSpeed);
         }
 
-        private void SnapInFrontOfCamera()
+        public void SnapInFrontOfCamera()
         {
+            // Si el HUD está anclado directamente sobre [Colocacion], se mantiene pegado al paciente.
+            if (transform.parent != null && placementController != null && transform.parent == placementController.transform)
+            {
+                transform.localPosition = new Vector3(0f, 0.44f, 0.34f);
+                transform.localRotation = Quaternion.Euler(22f, 0f, 0f);
+                return;
+            }
+
             Camera cam = Camera.main;
             if (cam == null) return;
 
@@ -378,7 +485,7 @@ namespace NasaVR.RCP
             flatForward.Normalize();
 
             Vector3 pos = cam.transform.position + flatForward * followDistance;
-            pos.y = cam.transform.position.y + followHeightOffset;
+            pos.y = Mathf.Max(0.65f, cam.transform.position.y + followHeightOffset);
             transform.position = pos;
             transform.rotation = Quaternion.LookRotation(pos - cam.transform.position, Vector3.up);
         }

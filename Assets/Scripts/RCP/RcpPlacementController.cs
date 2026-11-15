@@ -13,9 +13,11 @@ namespace NasaVR.RCP
     public class RcpPlacementController : MonoBehaviour
     {
         [Header("Colocación")]
-        [SerializeField] private float defaultDistance = 1.05f;
-        [SerializeField] private float defaultVerticalOffsetFromHead = -0.55f;
-        [SerializeField] private bool placeOnStartInXr = true;
+        [SerializeField] private float defaultDistance = 0.58f;
+        [SerializeField] private float defaultVerticalOffsetFromHead = -0.82f;
+        [SerializeField] private Transform coachTransform;
+        [SerializeField] private RcpExperienceHUD experienceHud;
+        [SerializeField] private RcpCompressionMonitor compressionMonitor;
 
         private readonly Dictionary<string, Renderer[]> _targetRenderers = new();
         private readonly Dictionary<Renderer, Color> _baseColors = new();
@@ -25,6 +27,7 @@ namespace NasaVR.RCP
 
         private static readonly Color ActiveColor = new(0.12f, 0.85f, 0.90f, 1f);
         private static readonly Color PulseEmission = new(0.10f, 0.70f, 0.85f, 1f);
+        private static readonly Color AlertPulseEmission = new(1.0f, 0.28f, 0.10f, 1f);
         private static readonly Color InactiveColor = new(0.32f, 0.42f, 0.50f, 0.55f);
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
@@ -37,12 +40,9 @@ namespace NasaVR.RCP
 
         private void Start()
         {
-            if (placeOnStartInXr && XRSettings.isDeviceActive)
-            {
-                PlaceInFrontOfUser();
-            }
-
             _metronome = FindFirstObjectByType<RcpMetronome>();
+            if (experienceHud == null) experienceHud = FindFirstObjectByType<RcpExperienceHUD>();
+            if (compressionMonitor == null) compressionMonitor = FindFirstObjectByType<RcpCompressionMonitor>();
             if (SimulationManager.Instance != null && SimulationManager.Instance.Steps != null)
             {
                 Bind(SimulationManager.Instance.Steps);
@@ -75,8 +75,8 @@ namespace NasaVR.RCP
         }
 
         /// <summary>
-        /// Ubica [Colocacion] frente a la mirada horizontal del usuario para alinear los puntos
-        /// sobre el paciente o maniquí real en Passthrough.
+        /// Ubica [Colocacion], [RCP_HUD] y [Coach] directamente frente al usuario (a nivel de piso/superficie)
+        /// para alinear sobre el paciente real o maniquí en Passthrough.
         /// </summary>
         public void PlaceInFrontOfUser()
         {
@@ -92,11 +92,39 @@ namespace NasaVR.RCP
             flatForward.Normalize();
 
             Vector3 targetPos = cam.transform.position + flatForward * defaultDistance;
-            targetPos.y = Mathf.Max(0.15f, cam.transform.position.y + defaultVerticalOffsetFromHead);
+            targetPos.y = XRSettings.isDeviceActive
+                ? 0.08f
+                : Mathf.Max(0.12f, cam.transform.position.y + defaultVerticalOffsetFromHead);
 
-            // Los marcadores heredados están en Z negativo respecto a [Colocacion]; ajustamos el pivote para quedar delante.
-            transform.position = targetPos - Quaternion.LookRotation(flatForward, Vector3.up) * new Vector3(0f, 0.2f, -0.6f);
+            transform.position = targetPos;
             transform.rotation = Quaternion.LookRotation(flatForward, Vector3.up);
+
+            NotifyPlacementConfirmed();
+        }
+
+        /// <summary>Alinea Coach (a nivel de piso junto al paciente) y HUD tras confirmar posición del paciente.</summary>
+        public void NotifyPlacementConfirmed()
+        {
+            if (coachTransform != null)
+            {
+                Vector3 coachBasePos = transform.position - transform.right * 0.56f + transform.forward * 0.14f;
+                coachBasePos.y = Mathf.Max(0f, transform.position.y - 0.08f);
+                coachTransform.position = coachBasePos;
+
+                Camera cam = Camera.main;
+                if (cam != null)
+                {
+                    Vector3 toCam = cam.transform.position - coachBasePos;
+                    toCam.y = 0f;
+                    if (toCam.sqrMagnitude > 0.001f)
+                    {
+                        coachTransform.rotation = Quaternion.LookRotation(toCam.normalized, Vector3.up);
+                    }
+                }
+            }
+
+            if (experienceHud == null) experienceHud = FindFirstObjectByType<RcpExperienceHUD>();
+            experienceHud?.SnapInFrontOfCamera();
         }
 
         private void Update()
@@ -105,12 +133,17 @@ namespace NasaVR.RCP
             if (!_targetRenderers.TryGetValue(_activeTargetId, out var renderers)) return;
 
             float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 4.5f);
+            bool alert = compressionMonitor != null &&
+                         (compressionMonitor.CurrentState == CompressionQualityState.HandsAwayFromChest ||
+                          compressionMonitor.CurrentState == CompressionQualityState.HandsIdleOnChest);
+
             if (_metronome != null && _metronome.IsActive)
             {
                 pulse = Mathf.Max(pulse * 0.35f, _metronome.BeatPulse);
             }
 
-            Color emission = PulseEmission * (0.6f + pulse * 1.6f);
+            Color baseGlow = alert ? AlertPulseEmission : PulseEmission;
+            Color emission = baseGlow * (0.6f + pulse * 1.8f);
             foreach (var r in renderers)
             {
                 if (r == null) continue;

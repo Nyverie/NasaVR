@@ -18,26 +18,25 @@ namespace NasaVR.RCP
 
         private void Awake()
         {
-            ConfigureCameras();
+            RefreshCameras(RcpRigCoordinator.IsXrRuntimeActive());
             ConfigureMetaPassthrough();
         }
 
         private void Start()
         {
-            // Reaplica tras PlatformBootstrapper por si activó el rig XR en Awake.
-            ConfigureCameras();
+            RefreshCameras(RcpRigCoordinator.IsXrRuntimeActive());
         }
 
-        private void ConfigureCameras()
+        public void RefreshCameras(bool xrActive)
         {
-            bool xrActive = XRSettings.isDeviceActive;
-            bool useTransparent = enablePassthroughOnDevice && (xrActive || !Application.isEditor);
+            bool useTransparent = enablePassthroughOnDevice && xrActive;
 
             foreach (var cam in FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (cam == null) continue;
+                bool isFlatCam = cam.gameObject.name == "FlatCamera";
                 cam.clearFlags = CameraClearFlags.SolidColor;
-                cam.backgroundColor = useTransparent
+                cam.backgroundColor = (!isFlatCam && useTransparent)
                     ? new Color(0f, 0f, 0f, 0f)
                     : editorFallbackBackground;
 
@@ -62,6 +61,7 @@ namespace NasaVR.RCP
 
             ovrManager.isInsightPassthroughEnabled = true;
             ovrManager.trackingOriginType = OVRManager.TrackingOrigin.FloorLevel;
+            ovrManager.launchSimultaneousHandsControllersOnStartup = true;
 
             var passthroughLayer = GetComponent<OVRPassthroughLayer>() ?? FindFirstObjectByType<OVRPassthroughLayer>();
             if (passthroughLayer == null)
