@@ -1,0 +1,44 @@
+{
+  "name": "NasaVR.RCP.Editor",
+  "rootNamespace": "NasaVR.RCP.Editor",
+  "references": [
+    "NasaVR.RCP",
+    "XRLabs.Core",
+    "XRLabs.Interactions",
+    "XRLabs.Simulations",
+    "XRLabs.Coach",
+    "XRLabs.Platform",
+    "XRLabs.Authoring.Editor",
+    "XRLabs.Coach.Editor",
+    "XRLabs.Visor.Editor",
+    "Unity.XR.Interaction.Toolkit",
+    "Unity.XR.CoreUtils",
+    "Unity.XR.Management",
+    "Unity.XR.Management.Editor",
+    "Unity.XR.OpenXR",
+    "Unity.XR.OpenXR.Editor",
+    "Unity.TextMeshPro",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.InputSystem",
+    "UnityEngine.UI",
+    "Oculus.VR",
+    "Oculus.VR.Editor"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [
+    {
+      "name": "com.meta.xr.sdk.core",
+      "expression": "",
+      "define": "META_XR_SDK"
+    }
+  ],
+  "noEngineReferences": false
+}

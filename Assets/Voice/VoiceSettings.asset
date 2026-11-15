@@ -17,11 +17,11 @@ MonoBehaviour:
   fishModelId: s2.1-pro
   voices:
   - language: 0
-    elevenLabsVoiceId: 
+    elevenLabsVoiceId: EXAVITQu4vr4xnSDxMaL
     fishVoiceId: 
     systemVoice: 
   - language: 1
-    elevenLabsVoiceId: 
+    elevenLabsVoiceId: EXAVITQu4vr4xnSDxMaL
     fishVoiceId: 
     systemVoice: 
   stability: 0.5
@@ -31,5 +31,5 @@ MonoBehaviour:
   temperature: 0.7
   speed: 1
   outputRoot: Assets/Voice
-  maxConcurrency: 2
-  allowIncompleteVoiceInDevBuilds: 0
+  maxConcurrency: 3
+  allowIncompleteVoiceInDevBuilds: 1

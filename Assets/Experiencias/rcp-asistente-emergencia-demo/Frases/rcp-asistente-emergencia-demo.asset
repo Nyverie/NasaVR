@@ -22,13 +22,13 @@ MonoBehaviour:
     - language: 0
       text: "Mant\xE9n la calma. Te voy a guiar paso a paso."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: eb0842c4fee7a4ba8a9aaaf59184d1cd, type: 3}
+      bakeHash: 2ee89a236d2bc0bb133c2cd8f6cdd9cc18110da784cfad5d1c3f237725a2c444
     - language: 1
       text: Stay calm. I will guide you step by step.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 13f5a32bc88b6464c809d5e5fdeaddaf, type: 3}
+      bakeHash: e45c575c0c645d14b9885faa19fe3a4d031d12de2f5b9e1b9ad9b1f069ca8fec
   - id: p1.seguridad
     note: 
     textOnly: 0
@@ -36,13 +36,13 @@ MonoBehaviour:
     - language: 0
       text: Comprueba que el lugar es seguro para ti y para la persona.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: f974ce6cc176b4121940cd7edba21707, type: 3}
+      bakeHash: 3408897b7f5f50eb80396e5467c554b2190e58f882ce94f53004658766fcc202
     - language: 1
       text: Make sure the area is safe for you and for the person.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: c07551c0571b849c890c14fef7a10aa0, type: 3}
+      bakeHash: 9ea9ed6ace03b25466bbc4e5c0d15af3a075e5e78ba2d929b0777220ef131257
   - id: p2.instr
     note: 
     textOnly: 0
@@ -51,14 +51,14 @@ MonoBehaviour:
       text: "Sacude con suavidad sus hombros y pregunta en voz alta: \xBFme oyes?
         Toca la marca de los hombros cuando lo hayas hecho."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 6082fb187200b4a13aba86050e9d9521, type: 3}
+      bakeHash: a9094a08dc6017cf844388a83dfe3f822ef80217b036c620a7bf87f51cf185c4
     - language: 1
       text: 'Gently shake their shoulders and ask out loud: can you hear me? Touch
         the shoulder marker when you have done it.'
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 298fa7dbe79b741c5898f4dc802a4c89, type: 3}
+      bakeHash: cd16b20a472125d101dd34f2144622ead8ce9715e0a834ec393690dbc97de74e
   - id: p2.pista
     note: 
     textOnly: 0
@@ -66,13 +66,13 @@ MonoBehaviour:
     - language: 0
       text: "Habla fuerte, cerca de su o\xEDdo. Luego toca la marca sobre sus hombros."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 4a32d7d0141644d5c90f602213c9b904, type: 3}
+      bakeHash: f6413f2f2b6b5532987822788b91b62f51d7f8fe66577dbd1af03c5a90d67cf4
     - language: 1
       text: Speak loudly, close to their ear. Then touch the marker on their shoulders.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: d6593b72a957e40d68b17f6bf2f2a001, type: 3}
+      bakeHash: a4b597c17d0a428f0d527f234dc3d5aabb907c6bda08dc80a2de496ef2c3cd08
   - id: p2.exito
     note: 
     textOnly: 0
@@ -80,14 +80,14 @@ MonoBehaviour:
     - language: 0
       text: Si no responde, pide ayuda en voz alta. Ahora comprobamos si respira.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 2655cc6ffc36c40908d8ad1bb914aebf, type: 3}
+      bakeHash: a46e08376ab8a85bd498625acbbf7636374bbdfaf2770d804338cd3052260e8b
     - language: 1
       text: If there is no response, call out for help. Now we check if they are
         breathing.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: face09836431e488f94dd9191c878feb, type: 3}
+      bakeHash: b82cb20dfe16bed1b3aacb5a151dcdb88ae0244746a83e8055d3779f02349e7e
   - id: p3.instr
     note: 
     textOnly: 0
@@ -98,14 +98,14 @@ MonoBehaviour:
       spokenText: "Mira su pecho durante no m\xE1s de diez segundos. \xBFRespira
         con normalidad? Pulsa uno si respira con normalidad, o dos si no respira
         o solo jadea."
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 8750c2a7d0b854f10b4a069a1166d116, type: 3}
+      bakeHash: ac1b191ec62efbe888c0bab89aa205df5baaf7ce9f6efbc239bb268c3b5fbe4f
     - language: 1
       text: Watch their chest for no more than ten seconds. Are they breathing normally?
         Press 1 if breathing normally, or 2 if not breathing or only gasping.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 15c09cf6fed81490e96f3c87fb808117, type: 3}
+      bakeHash: 542dcb93ed4352d41c1653916bd85f3ce3dd7bd5cedfbd7f7eee0083bce802b6
   - id: p3.pista
     note: 
     textOnly: 0
@@ -114,14 +114,14 @@ MonoBehaviour:
       text: "Los jadeos o boqueos no son una respiraci\xF3n normal. Si dudas, act\xFAa
         como si no respirara."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: dd32e3feb6b0b4cfdacfc8a2c789a615, type: 3}
+      bakeHash: 9db32cabce9a3466b499d79fe3fbcf32e03cac9d8b0535869105b62b1b6a31fc
     - language: 1
       text: Gasping is not normal breathing. If you are unsure, act as if they are
         not breathing.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: f8289e2c76f584aa2b10588b1e2fc270, type: 3}
+      bakeHash: 46e06340ef91c78126cd7afca6af0e60f383738db179402ab98393b503fd27a7
   - id: p3.exito
     note: 
     textOnly: 0
@@ -129,13 +129,13 @@ MonoBehaviour:
     - language: 0
       text: "Sin respiraci\xF3n normal, hay que actuar ya con compresiones."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 863672f6d4c3f4fcf94b7ab07d4abd3a, type: 3}
+      bakeHash: 45613aef9029639b019c6e060134547661ab19ed1605ad8cd9cdf04666d500de
     - language: 1
       text: Without normal breathing, act now with chest compressions.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: ba14bdd2a7f274f79a88c3a29bad800a, type: 3}
+      bakeHash: a16f0f1275610b990d50d39622a91b89f568159d32267f30da84492153ce9000
   - id: p3.err.respira
     note: 
     textOnly: 0
@@ -145,15 +145,15 @@ MonoBehaviour:
         su respiraci\xF3n y llama a emergencias. Si deja de respirar con normalidad,
         vuelve a comprobar."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: fdfe695f74fb34a2aacd99a8a7491e98, type: 3}
+      bakeHash: a22256303e7eef16c8f8ce5d91bd7c4004ac7fbcec883321b62c083f1a2ca369
     - language: 1
       text: If they are breathing normally, do not compress. Place them on their
         side, watch their breathing and call emergency services. If they stop breathing
         normally, check again.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 54463f74b52e248c6b1536a1dce11a30, type: 3}
+      bakeHash: f2554e1bc2828d9e156751c0320ccf2c5b373bfa07d2841e24cd0835c20c5561
   - id: p4.instr
     note: 
     textOnly: 0
@@ -163,15 +163,15 @@ MonoBehaviour:
         altavoz. Si hay alguien cerca, p\xEDdele que llame y que traiga un desfibrilador.
         Toca Hecho cuando la llamada est\xE9 en marcha."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 7e3b9ec6d00ab425fbff5d747d78a87b, type: 3}
+      bakeHash: 4b5caddfb5d620a2b46bc4fd7a6a9a13e762cf8d22a535991a06d11a6350e123
     - language: 1
       text: Call your local emergency number now and put the phone on speaker. If
         someone is nearby, ask them to call and bring a defibrillator. Touch Done
         when the call is under way.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 13eb5c245f0bb4cde9e455c855b0cdbc, type: 3}
+      bakeHash: 17cac42a034dbcb5bb477c555ef598dca717eb7de8a657cf142d88893e446774
   - id: p4.pista
     note: 
     textOnly: 0
@@ -180,14 +180,14 @@ MonoBehaviour:
       text: "No cuelgues: el operador tambi\xE9n puede guiarte. Cuando la llamada
         est\xE9 en marcha, toca Hecho."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 73d3d1450daa14e71bdd209d8858edac, type: 3}
+      bakeHash: 0e7d9834ea126e615d31b6c5c9f383b2fc02e33a70970e1302efabbb6642996d
     - language: 1
       text: 'Do not hang up: the operator can also guide you. When the call is under
         way, touch Done.'
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: a3157d03cc9d346d2ac92e6c97d80eae, type: 3}
+      bakeHash: 74e9830fc04ed0ea2afc1e209ce04c42afb16aeb4ebdb4f82b09338815fd53e9
   - id: p4.exito
     note: 
     textOnly: 0
@@ -195,13 +195,13 @@ MonoBehaviour:
     - language: 0
       text: Bien. Sigue las indicaciones del operador. Empezamos las compresiones.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 799bb0c51da874075b6bf6d85f95a008, type: 3}
+      bakeHash: 4da41fa23462dda2fb4801f722eff2052c7b36e6e7a67d7496095e16d28f46c7
     - language: 1
       text: Good. Follow the operator's instructions. Let's start compressions.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 76d84fe2ec6b04457a55f4f931905304, type: 3}
+      bakeHash: 85b997c1150d078d56542d42168dc905e3182d7258e9dfdbf929020f98c46a4c
   - id: p5.instr
     note: 
     textOnly: 0
@@ -211,15 +211,15 @@ MonoBehaviour:
         tiempo movi\xE9ndola. Arrod\xEDllate a su lado y toca el centro de su pecho
         para fijar el punto."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 0b3bf39f0a892413bbf25fe0db60931f, type: 3}
+      bakeHash: 0b0df428528c3074d4506ffba2bb54ebeab9e6dfcc9e3162f8d1bcae5deb241a
     - language: 1
       text: Place them on their back. If they are on a soft surface, do not waste
         time moving them. Kneel beside them and touch the center of their chest to
         set the point.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: db5665483b4aa462aa7bc88a15d7a8dc, type: 3}
+      bakeHash: ab62617c395848a4098d527172eb8b9ecca8276e10d995f63d884b6a57191524
   - id: p5.pista
     note: 
     textOnly: 0
@@ -228,14 +228,14 @@ MonoBehaviour:
       text: "El punto est\xE1 en el centro del pecho, sobre la mitad inferior del
         estern\xF3n. Toca la marca para fijarlo."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: cbdc215f816e6416ab830ad3fdd374b9, type: 3}
+      bakeHash: 1ecaedb0101d50d53d9f9737b46672924651c68faa62d94b66ebb3d0ec9489f2
     - language: 1
       text: The point is at the center of the chest, on the lower half of the breastbone.
         Touch the marker to set it.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 30191610ffd22478fb5d47466138634d, type: 3}
+      bakeHash: 62ddd8e8acb1c5ac9713fa967d0cd8bd683fdd1ec6aaaa567d3e2751802b3260
   - id: p5.exito
     note: 
     textOnly: 0
@@ -243,13 +243,13 @@ MonoBehaviour:
     - language: 0
       text: Punto fijado. A comprimir.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: b24f4307d8b514449999d67f7f0038bb, type: 3}
+      bakeHash: 8fa71489a8212254a75569ebcd37816aa9fad8dd6e4a23ccf9baaa2ca382836c
     - language: 1
       text: Point set. Start compressions.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 2b13d8682bf954d34a2b04d3f602ec0a, type: 3}
+      bakeHash: 3117861ec4ebfff1299fda95742f535e1a71cddc3d2109e50c53d9154eab40cb
   - id: p9.cierre
     note: 
     textOnly: 0
@@ -258,14 +258,14 @@ MonoBehaviour:
       text: "Lo est\xE1s haciendo bien. No pares. Cuando llegue la ayuda, cu\xE9ntales
         a qu\xE9 hora empezaste y qu\xE9 hiciste."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 0d660c7710a3a484fa599e52b5d6fbe1, type: 3}
+      bakeHash: 3122b56b782b6d490c6d399d3d65ef2bac043862233dd4deb6c26e4be636c8ef
     - language: 1
       text: You are doing well. Do not stop. When help arrives, tell them when you
         started and what you did.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 54425ad32b5c844b3bd4a97c41ba0b9d, type: 3}
+      bakeHash: 164b2e2307481f2dbfaba4449bf8cfcac274d3f2fc77d9888c36cb69f3d3f733
   - id: ui.tarea.respuesta
     note: 
     textOnly: 1
@@ -332,16 +332,16 @@ MonoBehaviour:
         cinco cent\xEDmetros pero sin pasar de seis, y deja que el pecho suba del
         todo. No pares."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 74d0487f1d7564edd9c8346e6a937fb3, type: 3}
+      bakeHash: dd6ac78e2140a44a100271468148e2dcad7d27390480c13b82eac1e2f242bd47
     - language: 1
       text: Place the heel of one hand on that point and the other hand on top, with
         your arms straight. Push hard and fast, to the beat of the sound, at least
         five centimeters but no more than six, and let the chest rise fully. Do not
         stop.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 8d9ae9b00de6f42188c1cdbb24fd538f, type: 3}
+      bakeHash: 2698c3035e2ae680222fe7689a196f12d5f3ab6de790d487340fba86a3f49a93
   - id: p7.instr
     note: 
     textOnly: 0
@@ -352,16 +352,16 @@ MonoBehaviour:
         la persona. Si indica descarga, avisa: \xA1al\xE9jense! y reanuda las compresiones
         de inmediato. Si no hay desfibrilador, sigue comprimiendo."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 8dfed8af127c5481ba0f66adbca2508c, type: 3}
+      bakeHash: 57a965711d4427fc98b9b2f0adbb674a0ed76d51a136b1ee941474511de93b98
     - language: 1
       text: 'If a defibrillator arrives, have someone else turn it on and place the
         pads while you keep compressing. While it analyzes, no one should touch the
         person. If it advises a shock, call out: clear! and resume compressions immediately.
         If there is no defibrillator, keep compressing.'
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: 37e7595253a7b408f93253945fa6ddb1, type: 3}
+      bakeHash: 55214908729dadc36ec371e9ea151fd2a8016c7a33a5134ce605e8034983198d
   - id: p8.instr
     note: 
     textOnly: 0
@@ -372,14 +372,14 @@ MonoBehaviour:
         ayuda, el desfibrilador indique parar, o la persona se mueva y respire con
         normalidad."
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: fe41d02e2a8aa4cf1ba5fbbc887e38ac, type: 3}
+      bakeHash: d80ce80ebb5e3bba19b5e4f269eb680eacaa42dccec3ea23f3bda92bd4de3363
     - language: 1
       text: Keep going without stopping. If someone else is there, switch every two
         minutes, with as little time off the chest as possible. Continue until help
         arrives, the defibrillator tells you to stop, or the person moves and breathes
         normally.
       spokenText: 
-      clip: {fileID: 0}
-      bakeHash: 
+      clip: {fileID: 8300000, guid: eb69d55ac89134dfea0034dcfb9a3745, type: 3}
+      bakeHash: 9ed674473f93ed0c624787d89a1514383986b6af26f0addc4b732b4c2f9c41cb
   pronunciation: []

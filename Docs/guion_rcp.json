@@ -1,0 +1,296 @@
+{
+  "esquema": "xrlabs.guion/0.1",
+  "experiencia": {
+    "id": "rcp-asistente-emergencia-demo",
+    "titulo": "Asistente de RCP en AR (prototipo)",
+    "descripcion": "Guía en tiempo real, manos libres, para una persona adulta que no responde y no respira con normalidad: comprobar, llamar, comprimir y usar un DEA. Prototipo de demostración; no sustituye al servicio de emergencias ni a un curso de RCP.",
+    "escena": "AsistenteRCP_AR",
+    "clave": "",
+    "idHeredado": 13,
+    "modo": "guiado",
+    "idiomas": [
+      "es",
+      "en"
+    ]
+  },
+  "coach": {
+    "nombre": "Coach"
+  },
+  "lineas": {
+    "p1.bienvenida": {
+      "es": "Mantén la calma. Te voy a guiar paso a paso.",
+      "en": "Stay calm. I will guide you step by step.",
+      "nota": "firme, calmado y directo; frases cortas"
+    },
+    "p1.seguridad": {
+      "es": "Comprueba que el lugar es seguro para ti y para la persona.",
+      "en": "Make sure the area is safe for you and for the person."
+    },
+    "p2.instr": {
+      "es": "Sacude con suavidad sus hombros y pregunta en voz alta: ¿me oyes? Toca la marca de los hombros cuando lo hayas hecho.",
+      "en": "Gently shake their shoulders and ask out loud: can you hear me? Touch the shoulder marker when you have done it."
+    },
+    "p2.pista": {
+      "es": "Habla fuerte, cerca de su oído. Luego toca la marca sobre sus hombros.",
+      "en": "Speak loudly, close to their ear. Then touch the marker on their shoulders."
+    },
+    "p2.exito": {
+      "es": "Si no responde, pide ayuda en voz alta. Ahora comprobamos si respira.",
+      "en": "If there is no response, call out for help. Now we check if they are breathing."
+    },
+    "p3.instr": {
+      "es": "Mira su pecho durante no más de diez segundos. ¿Respira con normalidad? Pulsa 1 si respira con normalidad, o 2 si no respira o solo jadea.",
+      "en": "Watch their chest for no more than ten seconds. Are they breathing normally? Press 1 if breathing normally, or 2 if not breathing or only gasping.",
+      "dicho": {
+        "es": "Mira su pecho durante no más de diez segundos. ¿Respira con normalidad? Pulsa uno si respira con normalidad, o dos si no respira o solo jadea."
+      }
+    },
+    "p3.pista": {
+      "es": "Los jadeos o boqueos no son una respiración normal. Si dudas, actúa como si no respirara.",
+      "en": "Gasping is not normal breathing. If you are unsure, act as if they are not breathing."
+    },
+    "p3.exito": {
+      "es": "Sin respiración normal, hay que actuar ya con compresiones.",
+      "en": "Without normal breathing, act now with chest compressions."
+    },
+    "p3.err.respira": {
+      "es": "Si respira con normalidad, no comprimas. Colócala de lado, vigila su respiración y llama a emergencias. Si deja de respirar con normalidad, vuelve a comprobar.",
+      "en": "If they are breathing normally, do not compress. Place them on their side, watch their breathing and call emergency services. If they stop breathing normally, check again."
+    },
+    "p4.instr": {
+      "es": "Llama ahora al número local de emergencias y pon el teléfono en altavoz. Si hay alguien cerca, pídele que llame y que traiga un desfibrilador. Toca Hecho cuando la llamada esté en marcha.",
+      "en": "Call your local emergency number now and put the phone on speaker. If someone is nearby, ask them to call and bring a defibrillator. Touch Done when the call is under way."
+    },
+    "p4.pista": {
+      "es": "No cuelgues: el operador también puede guiarte. Cuando la llamada esté en marcha, toca Hecho.",
+      "en": "Do not hang up: the operator can also guide you. When the call is under way, touch Done."
+    },
+    "p4.exito": {
+      "es": "Bien. Sigue las indicaciones del operador. Empezamos las compresiones.",
+      "en": "Good. Follow the operator's instructions. Let's start compressions."
+    },
+    "p5.instr": {
+      "es": "Colócala boca arriba. Si está en una superficie blanda, no pierdas tiempo moviéndola. Arrodíllate a su lado y toca el centro de su pecho para fijar el punto.",
+      "en": "Place them on their back. If they are on a soft surface, do not waste time moving them. Kneel beside them and touch the center of their chest to set the point."
+    },
+    "p5.pista": {
+      "es": "El punto está en el centro del pecho, sobre la mitad inferior del esternón. Toca la marca para fijarlo.",
+      "en": "The point is at the center of the chest, on the lower half of the breastbone. Touch the marker to set it."
+    },
+    "p5.exito": {
+      "es": "Punto fijado. A comprimir.",
+      "en": "Point set. Start compressions."
+    },
+    "p9.cierre": {
+      "es": "Lo estás haciendo bien. No pares. Cuando llegue la ayuda, cuéntales a qué hora empezaste y qué hiciste.",
+      "en": "You are doing well. Do not stop. When help arrives, tell them when you started and what you did."
+    },
+    "ui.tarea.respuesta": {
+      "es": "Comprobar si responde",
+      "en": "Check responsiveness",
+      "soloTexto": true
+    },
+    "ui.tarea.respiracion": {
+      "es": "Comprobar la respiración",
+      "en": "Check breathing",
+      "soloTexto": true
+    },
+    "ui.tarea.llamar": {
+      "es": "Llamar a emergencias",
+      "en": "Call emergency services",
+      "soloTexto": true
+    },
+    "ui.tarea.punto": {
+      "es": "Fijar el punto de compresión",
+      "en": "Set the compression point",
+      "soloTexto": true
+    },
+    "p6.instr": {
+      "es": "Pon el talón de una mano en ese punto y la otra mano encima, con los brazos rectos. Empuja fuerte y rápido, al ritmo del sonido, al menos cinco centímetros pero sin pasar de seis, y deja que el pecho suba del todo. No pares.",
+      "en": "Place the heel of one hand on that point and the other hand on top, with your arms straight. Push hard and fast, to the beat of the sound, at least five centimeters but no more than six, and let the chest rise fully. Do not stop."
+    },
+    "p7.instr": {
+      "es": "Si llega un desfibrilador, que otra persona lo encienda y ponga los parches mientras sigues comprimiendo. Cuando analice, nadie debe tocar a la persona. Si indica descarga, avisa: ¡aléjense! y reanuda las compresiones de inmediato. Si no hay desfibrilador, sigue comprimiendo.",
+      "en": "If a defibrillator arrives, have someone else turn it on and place the pads while you keep compressing. While it analyzes, no one should touch the person. If it advises a shock, call out: clear! and resume compressions immediately. If there is no defibrillator, keep compressing."
+    },
+    "p8.instr": {
+      "es": "Sigue sin parar. Si hay otra persona, cámbiense cada dos minutos, con el menor tiempo posible sin comprimir. Continúa hasta que llegue la ayuda, el desfibrilador indique parar, o la persona se mueva y respire con normalidad.",
+      "en": "Keep going without stopping. If someone else is there, switch every two minutes, with as little time off the chest as possible. Continue until help arrives, the defibrillator tells you to stop, or the person moves and breathes normally."
+    }
+  },
+  "objetos": [
+    {
+      "id": "hombros",
+      "nombre": "Marca de hombros (sobre la persona real)",
+      "tipo": "hotspot",
+      "modelo": "MarcaHombros"
+    },
+    {
+      "id": "pecho",
+      "nombre": "Marca de compresión (centro del pecho)",
+      "tipo": "hotspot",
+      "modelo": "MarcaPecho"
+    },
+    {
+      "id": "confirmar",
+      "nombre": "Botón Hecho",
+      "tipo": "hotspot",
+      "modelo": "BotonHecho"
+    }
+  ],
+  "secciones": [
+    {
+      "id": "evaluacion",
+      "titulo": "Comprobar y llamar",
+      "desde": "p1"
+    },
+    {
+      "id": "compresiones",
+      "titulo": "Compresiones",
+      "desde": "p5"
+    },
+    {
+      "id": "dea",
+      "titulo": "Desfibrilador y continuidad",
+      "desde": "p7"
+    }
+  ],
+  "pasos": [
+    {
+      "id": "p1",
+      "titulo": "Mantén la calma",
+      "tipo": "narracion",
+      "intro": [
+        "p1.bienvenida",
+        "p1.seguridad"
+      ],
+      "ancla": "paciente"
+    },
+    {
+      "id": "p2",
+      "titulo": "¿Responde?",
+      "tipo": "tocar",
+      "condicion": {
+        "objeto": "hombros"
+      },
+      "instruccion": "p2.instr",
+      "pista": "p2.pista",
+      "exito": "p2.exito",
+      "retrasoPista": 10,
+      "tarea": true,
+      "etiquetaTarea": "ui.tarea.respuesta",
+      "ancla": "paciente",
+      "senalar": "hombros",
+      "activos": [
+        "hombros"
+      ]
+    },
+    {
+      "id": "p3",
+      "titulo": "¿Respira con normalidad?",
+      "tipo": "elegir",
+      "condicion": {
+        "correcta": "2",
+        "error": {
+          "tecla": "1",
+          "clave": "respira"
+        }
+      },
+      "instruccion": "p3.instr",
+      "pista": "p3.pista",
+      "exito": "p3.exito",
+      "errores": {
+        "respira": "p3.err.respira"
+      },
+      "repetirInstruccionTrasError": true,
+      "retrasoPista": 12,
+      "tarea": true,
+      "etiquetaTarea": "ui.tarea.respiracion",
+      "ancla": "paciente",
+      "senalar": "pecho",
+      "activos": [
+        "pecho"
+      ]
+    },
+    {
+      "id": "p4",
+      "titulo": "Llamar a emergencias",
+      "tipo": "tocar",
+      "condicion": {
+        "objeto": "confirmar"
+      },
+      "instruccion": "p4.instr",
+      "pista": "p4.pista",
+      "exito": "p4.exito",
+      "retrasoPista": 10,
+      "tarea": true,
+      "etiquetaTarea": "ui.tarea.llamar",
+      "ancla": "paciente",
+      "senalar": "confirmar",
+      "activos": [
+        "confirmar"
+      ]
+    },
+    {
+      "id": "p5",
+      "titulo": "Fijar el punto de compresión",
+      "tipo": "tocar",
+      "condicion": {
+        "objeto": "pecho"
+      },
+      "instruccion": "p5.instr",
+      "pista": "p5.pista",
+      "exito": "p5.exito",
+      "retrasoPista": 10,
+      "tarea": true,
+      "etiquetaTarea": "ui.tarea.punto",
+      "ancla": "paciente",
+      "senalar": "pecho",
+      "activos": [
+        "pecho"
+      ]
+    },
+    {
+      "id": "p6",
+      "titulo": "Comprimir",
+      "tipo": "tiempo",
+      "condicion": {
+        "segundos": 30
+      },
+      "instruccion": "p6.instr",
+      "ancla": "paciente",
+      "senalar": "pecho"
+    },
+    {
+      "id": "p7",
+      "titulo": "Desfibrilador (DEA)",
+      "tipo": "tiempo",
+      "condicion": {
+        "segundos": 25
+      },
+      "instruccion": "p7.instr",
+      "ancla": "paciente",
+      "senalar": "pecho"
+    },
+    {
+      "id": "p8",
+      "titulo": "Continuar sin parar",
+      "tipo": "tiempo",
+      "condicion": {
+        "segundos": 40
+      },
+      "instruccion": "p8.instr",
+      "ancla": "paciente",
+      "senalar": "pecho"
+    },
+    {
+      "id": "p9",
+      "titulo": "Sigue hasta que llegue la ayuda",
+      "tipo": "narracion",
+      "intro": [
+        "p9.cierre"
+      ],
+      "ancla": "paciente"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "NasaVR.RCP",
+  "rootNamespace": "NasaVR.RCP",
+  "references": [
+    "XRLabs.Core",
+    "XRLabs.Interactions",
+    "XRLabs.Simulations",
+    "XRLabs.Coach",
+    "XRLabs.Platform",
+    "Unity.XR.Interaction.Toolkit",
+    "Unity.XR.CoreUtils",
+    "Unity.TextMeshPro",
+    "Unity.RenderPipelines.Universal.Runtime",
+    "Unity.InputSystem",
+    "UnityEngine.UI",
+    "Oculus.VR"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [
+    {
+      "name": "com.meta.xr.sdk.core",
+      "expression": "",
+      "define": "META_XR_SDK"
+    }
+  ],
+  "noEngineReferences": false
+}
